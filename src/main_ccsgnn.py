@@ -119,9 +119,7 @@ from utils.data.collate import (
     collate_fn_factory_ccs
 )
 from utils.train import TrainRunner
-from lessr import LESSR
-from srgnn import SRGNN
-from model import CCSGNN
+from models import CCSGNN
 
 
 device = th.device('cuda' if th.cuda.is_available() else 'cpu')

@@ -7,11 +7,9 @@ import dgl.ops as F
 import numpy as np
 import torch as th
 import torch.nn as nn
-from dgl.nn import GATConv, MaxPooling
 from scipy import sparse
 
-from PositionalEmbedding import LearnablePositionalEncoder
-
+from .gnn_models import GATConv
 
 class SemanticExpander(nn.Module):
     
@@ -131,7 +129,6 @@ class AttnReadout(nn.Module):
             self.fc_u.append(nn.Linear(input_dim, hidden_dim, bias=True))
             self.fc_v.append(nn.Linear(input_dim, hidden_dim, bias=True))
             self.fc_e.append(nn.Linear(hidden_dim, 1, bias=False))
-            self.fc_p.append(LearnablePositionalEncoder(input_dim, 500))
         self.fc_out = (
             nn.Linear(input_dim, output_dim, bias=False)
             if output_dim != input_dim

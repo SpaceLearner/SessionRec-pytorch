@@ -72,7 +72,6 @@ class TrainRunner:
         else:
             params = model.parameters()
         self.optimizer = optim.Adam(params, lr=lr, weight_decay=weight_decay)
-        # self.optimizer = optim.SGD(params, lr=lr, weight_decay=weight_decay)
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=3, gamma=0.1)
         
         self.train_loader = train_loader
@@ -81,7 +80,6 @@ class TrainRunner:
         self.epoch        = 0
         self.batch        = 0
         self.patience     = patience
-        # self.weights = th.tensor(np.load(dataset+'/weights.npy')).float().to(self.device) + 1
 
     def train(self, epochs, log_interval=100):
         max_mrr = 0
