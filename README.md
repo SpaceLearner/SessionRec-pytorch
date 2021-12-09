@@ -17,6 +17,6 @@ Then run the code in src/utils/data/preprocess to process them.
 
 ## Run
 
-<p>dsadsa</p>
+<p>python main_ccsgnn.py --dataset-dir datasets/$DATASETNAME</p>
 
 
