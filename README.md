@@ -4,6 +4,11 @@
 
 This is the implementation of **Learning Multi-granularity User Intent Unit for Session-based Recommendation** from WSDM 2022 and some other session-based recommendation baselines. We mainly follow the implementation of lessr. (Tianwen Chen, Raymond Wong, KDD 2020)
 
+
+## Baselines
+
+We also reimplemented several current session-based recommendation baselines and tuned them through our best effert.
+
 ## Dataset
 
 Download and extract the following datasets and put the files in the dataset folder named under datasets/$DATASETNAME
