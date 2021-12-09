@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is the implementation of **Learning Multi-granularity User Intent Unit for Session-based Recommendation** from WSDM 2022 and some other session-based recommendation baselines. We mainly follow the implementation of lessr. (KDD 2020)
+This is the implementation of **Learning Multi-granularity User Intent Unit for Session-based Recommendation** from WSDM 2022 and some other session-based recommendation baselines. We mainly follow the implementation of lessr. (Handling Information Loss of Graph Neural Networks for Session-based Recommendation, KDD 2020)
 
 ## Dataset
 
