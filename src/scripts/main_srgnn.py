@@ -56,7 +56,7 @@ print(args)
 
 from pathlib import Path
 import torch as th
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, SequentialSampler
 from src.models import SRGNN
 from utils.data.dataset import read_dataset, AugmentedDataset
 from utils.data.collate import (
@@ -82,10 +82,12 @@ collate_fn = collate_fn_factory(seq_to_session_graph)
 train_loader = DataLoader(
     train_set,
     batch_size=args.batch_size,
-    shuffle=True,
-    drop_last=True,
+    # shuffle=True,
+    # drop_last=True,
     num_workers=args.num_workers,
     collate_fn=collate_fn,
+    pin_memory=True,
+    sampler=SequentialSampler(train_set)
 )
 
 test_loader = DataLoader(
