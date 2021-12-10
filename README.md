@@ -2,8 +2,7 @@
 
 ## MSGIFSR
 
-This is the implementation of **Learning Multi-granularity User Intent Unit for Session-based Recommendation** from WSDM 2022 and some other session-based recommendation models. We mainly follow the implementation of [lessr](https://github.com/twchen/lessr). (Tianwen Chen, Raymond Wong, KDD 2020)
-
+This is the implementation of **Learning Multi-granularity User Intent Unit for Session-based Recommendation** from WSDM 2022 and some other session-based recommendation models. We use [DGL](https://www.dgl.ai/) library and mainly follow the implementation of [lessr](https://github.com/twchen/lessr). (Tianwen Chen, Raymond Wong, KDD 2020)
 
 ## Baselines
 
@@ -22,7 +21,15 @@ Then run the code in src/utils/data/preprocess to process them.
 
 ## Run
 
-<p>bash start.sh $MODEL_NAME $DATASET_NAME</p>
+first create the enveriment.
+
+```
+conda env create -f environment.yml
+```
+
+then 
+
+bash start.sh $MODEL_NAME $DATASET_NAME
 
 ## Experiment Results
 

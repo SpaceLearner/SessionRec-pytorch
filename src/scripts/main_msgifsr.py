@@ -118,12 +118,12 @@ import os
 import numpy as np
 import torch as th
 from torch.utils.data import DataLoader, SequentialSampler
-from utils.data.dataset import read_dataset, AugmentedDataset
-from utils.data.collate import (
+from src.utils.data.dataset import read_dataset, AugmentedDataset
+from src.utils.data.collate import (
     seq_to_ccs_graph,
     collate_fn_factory_ccs
 )
-from utils.train import TrainRunner
+from src.utils.train import TrainRunner
 from src.models import MSGIFSR
 
 

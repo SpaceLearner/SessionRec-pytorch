@@ -59,10 +59,10 @@ from pathlib import Path
 import torch as th
 from torch.utils.data import DataLoader, SequentialSampler
 from src.models import LESSR
-from utils.data.collate import (collate_fn_factory, seq_to_eop_multigraph,
+from src.utils.data.collate import (collate_fn_factory, seq_to_eop_multigraph,
                                 seq_to_shortcut_graph)
-from utils.data.dataset import AugmentedDataset, read_dataset
-from utils.train import TrainRunner
+from src.utils.data.dataset import AugmentedDataset, read_dataset
+from src.utils.train import TrainRunner
 
 dataset_dir = Path(args.dataset_dir)
 print('reading dataset')
