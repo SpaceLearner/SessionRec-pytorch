@@ -24,4 +24,8 @@ Then run the code in src/utils/data/preprocess to process them.
 
 <p>bash start.sh $MODEL_NAME $DATASET_NAME</p>
 
+## Experiment Results
+
+We find that keeping the original order of training data makes the result better. It is due to the way of splitting the data. Current public session-based recommendation datasets usually split data according to time. This will make the distribution of the last few samples of the training data similar to the test data than samples that at the former positions. Without shuffling the model fits better.
+
 
