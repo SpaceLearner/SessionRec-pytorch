@@ -26,6 +26,6 @@ Then run the code in src/utils/data/preprocess to process them.
 
 ## Experiment Results
 
-We find that keeping the original order of training data makes the result better. It is due to the way of splitting the data. Current public session-based recommendation datasets usually split data according to time. This will make the distribution of the last few samples of the training data similar to the test data than samples that at the former positions. Without shuffling the model fits better.
+We find that keeping the original order of training data makes the result better. It is due to the way of splitting the dataset. Current public session-based recommendation datasets usually split train/test data according to time. This will make the distribution of samples at the latter position of the training data more similar to the test data than distribution of samples at the former positions. Without shuffling the model will fit better. This is a common phemonemon in recommender systems that user interest evolves fast and too early samples will not help the model learn better.
 
 
