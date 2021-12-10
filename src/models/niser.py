@@ -93,17 +93,17 @@ class AttnReadout(nn.Module):
             rst = self.activation(rst)
         return rst
 
-class SRGNN(nn.Module):
+class NISER(nn.Module):
     
-    def __init__(self, num_items, embedding_dim, num_layers, batch_norm=False, dropout=0.0, norm=True):
+    def __init__(self, num_items, embedding_dim, num_layers, batch_norm=False, dropout=0.0, norm=True, scale=None):
         super().__init__()
         self.embedding = nn.Embedding(num_items, embedding_dim)
-        # self.indices = th.arange(num_items, dtype=th.long)
         self.register_buffer('indices', th.arange(num_items, dtype=th.long))
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
         self.layers = nn.ModuleList()
         self.norm = norm
+        self.scale = scale
         input_dim = embedding_dim
         for i in range(num_layers):
             layer = SRGNNLayer(
@@ -160,7 +160,10 @@ class SRGNN(nn.Module):
         if self.norm:
             target = target.div(th.norm(target, p=2, dim=-1, keepdim=True) + 1e-12)
         logits = sr @ target.t()
-        logits = th.log(nn.functional.softmax(12 * logits, dim=-1))
+        if self.scale:
+            logits = th.log(nn.functional.softmax(self.scale * logits, dim=-1))
+        else:
+            logits = th.log(nn.functional.softmax(logits, dim=-1))
         return logits# , 0
         
         

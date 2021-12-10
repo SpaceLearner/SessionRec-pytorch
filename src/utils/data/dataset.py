@@ -6,7 +6,6 @@ import pandas as pd
 def create_index(sessions):
     lens = np.fromiter(map(len, sessions), dtype=np.long)
     session_idx = np.repeat(np.arange(len(sessions)), lens - 1)
-    # print(session_idx)
     label_idx = map(lambda l: range(1, l), lens)
     label_idx = itertools.chain.from_iterable(label_idx)
     label_idx = np.fromiter(label_idx, dtype=np.long)

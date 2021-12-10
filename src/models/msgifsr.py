@@ -44,7 +44,7 @@ class SemanticExpander(nn.Module):
         # return invar + var
         return 0.5 * invar + 0.5 * var
       
-class CCSGL(nn.Module):
+class MSHGNN(nn.Module):
     
     def __init__(self, input_dim, output_dim, dropout=0.0, activation=None, order=1, reducer='mean'):
         super().__init__()
@@ -55,27 +55,16 @@ class CCSGL(nn.Module):
         self.activation = activation
         self.order = order
         
-        self.conv1 = dglnn.HeteroGraphConv({
-          'intra1' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra2' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra3' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra4' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra5' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra6' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra7' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'inter' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True)},
+        self.conv1 = dglnn.HeteroGraphConv(
+            {'intra'+str(i):dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
+            +{'inter' : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)},
          aggregate='sum')
         
-        self.conv2 = dglnn.HeteroGraphConv({
-          'intra1' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra2' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra3' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra4' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra5' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra6' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'intra7' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True),
-          'inter' : dglnn.GATConv(input_dim, output_dim, 8, 0.1, 0.1, residual=True)},
+        self.conv2 = dglnn.HeteroGraphConv(
+            {'intra'+str(i):dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
+            +{'inter' : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)},
          aggregate='sum')
+        
         self.lint = nn.Linear(output_dim, 1, bias=False)
         self.linq = nn.Linear(output_dim, output_dim)
         self.link = nn.Linear(output_dim, output_dim, bias=False)
@@ -83,8 +72,6 @@ class CCSGL(nn.Module):
     def forward(self, g, feat):
         
         with g.local_scope():
-        
-#            g1 = dgl.edge_subgraph(g, {'inter': g.edges(etype='inter')}, preserve_nodes=True)
                 
             h1 = self.conv1(g, (feat, feat))
             h2 = self.conv2(g.reverse(copy_edata=True), (feat, feat))
@@ -169,7 +156,7 @@ class AttnReadout(nn.Module):
         
         return rst
 
-class CCSGNN(nn.Module):
+class MSGIFSR(nn.Module):
     
     def __init__(self, num_items, datasets, embedding_dim, num_layers, dropout=0.0, reducer='mean', order=3, norm=True, extra=True, fusion=True, device=th.device('cpu')):
         super().__init__()
@@ -185,14 +172,13 @@ class CCSGNN(nn.Module):
         self.reducer  = reducer
         self.order    = order
         self.alpha    = nn.Parameter(th.Tensor(self.order))
-        # self.register_buffer('alpha', th.Tensor(self.order))
         self.beta     = nn.Parameter(th.Tensor(1))
         self.norm     = norm
         self.expander = SemanticExpander(input_dim, reducer, order)
         
         self.device = device
         for i in range(num_layers):
-            layer = CCSGL(
+            layer = MSHGNN(
                 input_dim,
                 embedding_dim,
                 dropout=dropout,
