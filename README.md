@@ -29,8 +29,9 @@ conda env create -f environment.yml
 
 then 
 
+```
 bash start.sh $MODEL_NAME $DATASET_NAME
-
+```
 ## Experiment Results
 
 We find that keeping the original order of training data makes the result better. It is due to the way of splitting the dataset. Current public session-based recommendation datasets usually split train/test data according to time. This will make the distribution of samples at the latter position of the training data more similar to the test data than distribution of samples at the former positions. Without shuffling the model will fit better. This is a common phemonemon in recommender systems that user interest evolves fast and too early samples will not help the model learn better.
