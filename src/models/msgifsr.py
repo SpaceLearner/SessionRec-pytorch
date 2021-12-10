@@ -55,15 +55,13 @@ class MSHGNN(nn.Module):
         self.activation = activation
         self.order = order
         
-        self.conv1 = dglnn.HeteroGraphConv(
-            {'intra'+str(i):dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
-            +{'inter' : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)},
-         aggregate='sum')
+        conv1_modules = {'intra'+str(i+1) : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
+        conv1_modules.update({'inter'     : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)})
+        self.conv1 = dglnn.HeteroGraphConv(conv1_modules, aggregate='sum')
         
-        self.conv2 = dglnn.HeteroGraphConv(
-            {'intra'+str(i):dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
-            +{'inter' : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)},
-         aggregate='sum')
+        conv2_modules = {'intra'+str(i+1) : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
+        conv2_modules.update({'inter'     : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)})
+        self.conv2 = dglnn.HeteroGraphConv(conv2_modules, aggregate='sum')
         
         self.lint = nn.Linear(output_dim, 1, bias=False)
         self.linq = nn.Linear(output_dim, output_dim)
@@ -86,7 +84,7 @@ class MSHGNN(nn.Module):
                 if len(h['s'+str(i+1)].shape) > 2:
                     h['s'+str(i+1)] = h['s'+str(i+1)].max(1)[0]
                 h_mean = F.segment.segment_reduce(g.batch_num_nodes('s'+str(i+1)), feat['s'+str(i+1)], 'mean')
-                h_mean = dgl.broadcast_nodes(g, h_mean, ntype='s'+str(i+1))
+                h_mean = dgl.broadcast_nodes(g, h_mean, ntype='s'+str(i+1)) # adding mean maskes better
                 # print(h['s'+str(i+1)].shape, h_mean.shape)
                 h['s'+str(i+1)] =  h_mean + h['s'+str(i+1)]
                 

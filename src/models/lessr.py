@@ -180,4 +180,4 @@ class LESSR(nn.Module):
             sr = self.batch_norm(sr)
         sr = self.fc_sr(self.feat_drop(sr))
         logits = sr @ self.embedding(self.indices).t()
-        return logits
+        return th.softmax(logits, dim=1).log()

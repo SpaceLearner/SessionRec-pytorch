@@ -3,7 +3,10 @@ import os
 import numpy as np
 import torch
 import random
-import pickle
+import sys
+
+sys.path.append('..')
+sys.path.append('../..')
 
 def seed_torch(seed=42):
     seed = int(seed)
@@ -23,6 +26,8 @@ def get_freer_gpu():
     os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
     memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
     # memory_available = memory_available[1:6]
+    if len(memory_available) == 0:
+        return -1
     return int(np.argmax(memory_available))
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(get_freer_gpu())
@@ -58,7 +63,7 @@ parser.add_argument(
 parser.add_argument(
     '--num-workers',
     type=int,
-    default=4,
+    default=0,
     help='the number of processes to load the input graphs',
 )
 parser.add_argument(
@@ -119,7 +124,7 @@ from utils.data.collate import (
     collate_fn_factory_ccs
 )
 from utils.train import TrainRunner
-from models import MSGIFSR
+from src.models import MSGIFSR
 
 
 device = th.device('cuda' if th.cuda.is_available() else 'cpu')
@@ -143,12 +148,12 @@ collate_fn = collate_fn_factory_ccs((seq_to_ccs_graph,), order=args.order)
 train_loader = DataLoader(
     train_set,
     batch_size=args.batch_size,
-    # shuffle=True,
-    # drop_last=True,
+    shuffle=True,
+    drop_last=True,
     num_workers=args.num_workers,
     collate_fn=collate_fn,
-    pin_memory=True,
-    sampler=SequentialSampler(train_set)
+    pin_memory=True
+    # sampler=SequentialSampler(train_set)
 )
 
 test_loader = DataLoader(

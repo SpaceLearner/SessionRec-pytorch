@@ -9,32 +9,28 @@ import dgl.ops as F
 import dgl.function as fn
 
 class SRGNNLayer(nn.Module):
-    def __init__(self, input_dim, output_dim, batch_norm=False, dropout=0.0, activation=None):
+    def __init__(self, input_dim, output_dim, batch_norm=False, feat_drop=0.0, activation=None):
         super().__init__()
-        self.batch_norm = nn.BatchNorm1d(input_dim) if batch_norm else None
-        self.dropout = nn.Dropout(dropout)
-        self.gru = nn.GRUCell(2 * input_dim, output_dim)
-        self.W1 = nn.Linear(input_dim, output_dim, bias=False)
-        self.W2 = nn.Linear(input_dim, output_dim, bias=False)
+        self.dropout    = nn.Dropout(feat_drop)
+        self.gru        = nn.GRUCell(2 * input_dim, output_dim)
+        self.W1         = nn.Linear(input_dim, output_dim, bias=False)
+        self.W2         = nn.Linear(input_dim, output_dim, bias=False)
         self.activation = activation
         
     def messager(self, edges):
-        # print(edges.data['w'])
+        
         return {'m': edges.src['ft'] * edges.data['w'].unsqueeze(-1), 'w': edges.data['w']}
 
-        # return {'m': edges.src['ft']}
-
     def reducer(self, nodes):
+        
         m = nodes.mailbox['m']
         w = nodes.mailbox['w']
-        # print(w.shape)
         hn = m.sum(dim=1) / w.sum(dim=1).unsqueeze(-1)
+        
         return {'neigh': hn}
     
     def forward(self, mg, feat):
         with mg.local_scope():
-            if self.batch_norm is not None:
-                feat = self.batch_norm(feat)
             mg.ndata['ft'] = self.dropout(feat)
             if mg.number_of_edges() > 0:
                 mg.update_all(self.messager, self.reducer)
@@ -45,9 +41,8 @@ class SRGNNLayer(nn.Module):
                 neigh1 = self.W1(neigh1)
                 neigh2 = self.W2(neigh2)
                 hn = th.cat((neigh1, neigh2), dim=1)
-                rst = self.gru(hn, feat)
+                rst = self.gru(hn, feat) 
             else:
-                #rst = self.gru(th.cat((feat, feat), dim=1), feat)
                 rst = feat
         if self.activation is not None:
             rst = self.activation(rst)
@@ -95,7 +90,7 @@ class AttnReadout(nn.Module):
 
 class NISER(nn.Module):
     
-    def __init__(self, num_items, embedding_dim, num_layers, batch_norm=False, dropout=0.0, norm=True, scale=None):
+    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, norm=True, scale=12):
         super().__init__()
         self.embedding = nn.Embedding(num_items, embedding_dim)
         self.register_buffer('indices', th.arange(num_items, dtype=th.long))
@@ -109,24 +104,21 @@ class NISER(nn.Module):
             layer = SRGNNLayer(
                 input_dim,
                 embedding_dim,
-                batch_norm=batch_norm,
-                dropout=0
-                #activation=nn.PReLU(embedding_dim)
+                batch_norm=None,
+                feat_drop=feat_drop
             )
-            input_dim += embedding_dim
             self.layers.append(layer)
         self.readout = AttnReadout(
             input_dim,
             embedding_dim,
             embedding_dim,
-            batch_norm=batch_norm,
-            feat_drop=0,
+            batch_norm=None,
+            feat_drop=feat_drop,
             activation=None,
         )
-        input_dim += embedding_dim
-        self.batch_norm = nn.BatchNorm1d(input_dim) if batch_norm else None
-        self.feat_drop = nn.Dropout(dropout)
-        self.fc_sr = nn.Linear(input_dim, embedding_dim, bias=False)
+
+        self.feat_drop = nn.Dropout(feat_drop)
+        self.fc_sr = nn.Linear(input_dim + embedding_dim, embedding_dim, bias=False)
         
         self.reset_parameters()
         
@@ -140,19 +132,16 @@ class NISER(nn.Module):
         feat = self.feat_drop(self.embedding(iid))
         if self.norm:
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True) + 1e-12)
+        out = feat
         for i, layer in enumerate(self.layers):
-            # out = layer(mg, feat)
-            out = feat
-            feat = th.cat([out, feat], dim=1)
-
+            out = layer(mg, out)
+            
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True))
         sr_g = self.readout(mg, feat, last_nodes)
         sr_l = feat[last_nodes]
         sr = th.cat([sr_l, sr_g], dim=1)
-        if self.batch_norm is not None:
-            sr = self.batch_norm(sr)
         sr = self.fc_sr(sr)
         if self.norm:
             sr = sr.div(th.norm(sr, p=2, dim=-1, keepdim=True) + 1e-12)

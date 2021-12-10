@@ -1,4 +1,8 @@
 import argparse
+import sys
+
+sys.path.append('..')
+sys.path.append('../..')
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument(
@@ -55,12 +59,11 @@ import torch as th
 from torch.utils.data import DataLoader
 from utils.data.dataset import read_dataset, AugmentedDataset
 from utils.data.collate import (
-    seq_to_eop_multigraph,
-    seq_to_shortcut_graph,
+    seq_to_session_graph,
     collate_fn_factory,
 )
 from utils.train import TrainRunner
-from models import NISER
+from src.models import NISER
 
 dataset_dir = Path(args.dataset_dir)
 print('reading dataset')
@@ -74,10 +77,8 @@ if args.valid_split is not None:
 train_set = AugmentedDataset(train_sessions)
 test_set = AugmentedDataset(test_sessions)
 
-if args.num_layers > 1:
-    collate_fn = collate_fn_factory(seq_to_eop_multigraph, seq_to_shortcut_graph)
-else:
-    collate_fn = collate_fn_factory(seq_to_eop_multigraph)
+
+collate_fn = collate_fn_factory(seq_to_session_graph)
 
 train_loader = DataLoader(
     train_set,

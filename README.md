@@ -2,7 +2,7 @@
 
 ## MSGIFSR
 
-This is the implementation of **Learning Multi-granularity User Intent Unit for Session-based Recommendation** from WSDM 2022 and some other session-based recommendation baselines. We mainly follow the implementation of lessr. (Tianwen Chen, Raymond Wong, KDD 2020)
+This is the implementation of **Learning Multi-granularity User Intent Unit for Session-based Recommendation** from WSDM 2022 and some other session-based recommendation models. We mainly follow the implementation of [lessr](https://github.com/twchen/lessr). (Tianwen Chen, Raymond Wong, KDD 2020)
 
 
 ## Baselines
@@ -22,6 +22,6 @@ Then run the code in src/utils/data/preprocess to process them.
 
 ## Run
 
-<p>python main_ccsgnn.py --dataset-dir datasets/$DATASETNAME</p>
+<p>bash start.sh $MODEL_NAME $DATASET_NAME</p>
 
 

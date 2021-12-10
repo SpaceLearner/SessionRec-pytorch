@@ -57,8 +57,8 @@ print(args)
 from pathlib import Path
 
 import torch as th
-from models import LESSR
 from torch.utils.data import DataLoader
+from src.models import LESSR
 from utils.data.collate import (collate_fn_factory, seq_to_eop_multigraph,
                                 seq_to_shortcut_graph)
 from utils.data.dataset import AugmentedDataset, read_dataset
@@ -93,7 +93,7 @@ train_loader = DataLoader(
 test_loader = DataLoader(
     test_set,
     batch_size=args.batch_size,
-    shuffle=False,
+    shuffle=True,
     num_workers=args.num_workers,
     collate_fn=collate_fn,
 )
