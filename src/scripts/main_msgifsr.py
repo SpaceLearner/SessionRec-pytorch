@@ -81,8 +81,8 @@ parser.add_argument(
 parser.add_argument(
     '--order',
     type=int,
-    default=1,
-    help='order of ccs-g',
+    default=3,
+    help='order of msg',
 )
 parser.add_argument(
     '--reducer',
