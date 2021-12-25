@@ -1,0 +1,20 @@
+sh: nvidia-smi: command not found
+Using backend: pytorch
+Namespace(batch_size=512, dataset_dir='../../datasets/diginetica', embedding_dim=256, epochs=30, extra=True, feat_drop=0.1, fusion=True, log_interval=100, lr=0.001, norm=True, num_layers=1, num_workers=0, order=1, patience=3, reducer='mean', valid_split=None, weight_decay=1e-05)
+reading dataset
+716835
+60194
+start training
+  0%|                                                                                                  | 0/30 [00:00<?, ?it/s]/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/torch/autocast_mode.py:141: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
+  warnings.warn('User provided device_type of \'cuda\', but CUDA is not available. Disabling')
+  0%|                                                                                                  | 0/30 [02:45<?, ?it/s]
+Traceback (most recent call last):
+  File "scripts/main_msgifsr_tune.py", line 203, in <module>
+    mrr, hit = runner.train(args.epochs, args.log_interval)
+  File "/Users/gjyan/Documents/Projects/lessr/SessionRec-pytorch/src/../src/utils/train.py", line 97, in train
+    scores = self.model(*inputs)
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/gjyan/Documents/Projects/lessr/SessionRec-pytorch/src/../src/models/msgifsr.py", line 288, in forward
+    score = th.softmax(12 * logits_in.squeeze(), dim=-1)
+KeyboardInterrupt

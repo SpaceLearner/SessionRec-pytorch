@@ -55,12 +55,12 @@ class MSHGNN(nn.Module):
         self.activation = activation
         self.order = order
         
-        conv1_modules = {'intra'+str(i+1) : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
-        conv1_modules.update({'inter'     : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)})
+        conv1_modules = {'intra'+str(i+1) : GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
+        conv1_modules.update({'inter'     : GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)})
         self.conv1 = dglnn.HeteroGraphConv(conv1_modules, aggregate='sum')
         
-        conv2_modules = {'intra'+str(i+1) : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
-        conv2_modules.update({'inter'     : dglnn.GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)})
+        conv2_modules = {'intra'+str(i+1) : GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True) for i in range(self.order)}
+        conv2_modules.update({'inter'     : GATConv(input_dim, output_dim, 8, dropout, dropout, residual=True)})
         self.conv2 = dglnn.HeteroGraphConv(conv2_modules, aggregate='sum')
         
         self.lint = nn.Linear(output_dim, 1, bias=False)
@@ -112,7 +112,7 @@ class AttnReadout(nn.Module):
         self.fc_p = nn.ModuleList()
         for i in range(self.order):
             self.fc_u.append(nn.Linear(input_dim, hidden_dim, bias=True))
-            self.fc_v.append(nn.Linear(input_dim, hidden_dim, bias=True))
+            self.fc_v.append(nn.Linear(input_dim, hidden_dim, bias=False))
             self.fc_e.append(nn.Linear(hidden_dim, 1, bias=False))
         self.fc_out = (
             nn.Linear(input_dim, output_dim, bias=False)
@@ -207,8 +207,8 @@ class MSGIFSR(nn.Module):
         self.input_dim = input_dim
         self.embedding_dim =embedding_dim
  
-        self.sr_trans1 = nn.Linear(embedding_dim, embedding_dim)
-        self.sr_trans2 = nn.Linear(embedding_dim, embedding_dim)
+        # self.sr_trans1 = nn.Linear(embedding_dim, embedding_dim)
+        # self.sr_trans2 = nn.Linear(embedding_dim, embedding_dim)
         self.reset_parameters()
         self.alpha.data = th.zeros(self.order)
         self.alpha.data[0] = th.tensor(1.0)
@@ -240,6 +240,7 @@ class MSGIFSR(nn.Module):
         
     def forward(self, mg):
         
+        
         feats = {}
         for i in range(self.order):
             iid = mg.nodes['s' + str(i+1)].data['iid']
@@ -249,7 +250,7 @@ class MSGIFSR(nn.Module):
             if th.isnan(feat).any():
                 feat = feat.masked_fill(feat != feat, 0)
             if self.norm:
-                feat = nn.functional.normalize(feat)
+                feat = nn.functional.normalize(feat, dim=-1)
             feats['s' + str(i+1)] = feat
        
         h = feats
@@ -259,7 +260,7 @@ class MSGIFSR(nn.Module):
         last_nodes = []
         for i in range(self.order):
             if self.norm:
-                h['s'+str(i+1)] = nn.functional.normalize(h['s'+str(i+1)])
+                h['s'+str(i+1)] = nn.functional.normalize(h['s'+str(i+1)], dim=-1)
             last_nodes.append(mg.filter_nodes(lambda nodes: nodes.data['last'] == 1, ntype='s'+str(i+1)))
             
         feat = h
@@ -271,9 +272,11 @@ class MSGIFSR(nn.Module):
         if self.norm:
             sr = nn.functional.normalize(sr, dim=-1)
         
+        
         target = self.embeddings(self.indices)
+        
         if self.norm:
-            target = nn.functional.normalize(target)
+            target = nn.functional.normalize(target, dim=-1)
                
         if self.extra:
             logits = sr @ target.t()
@@ -285,8 +288,8 @@ class MSGIFSR(nn.Module):
 
             logits_in = logits.masked_fill(~mask.bool().unsqueeze(1), float('-inf'))
             logits_ex = logits.masked_fill(mask.bool().unsqueeze(1), float('-inf'))
-            score = th.softmax(12 * logits_in.squeeze(), dim=-1)
-            score_ex = th.softmax(12 * logits_ex.squeeze(), dim=-1) 
+            score     = th.softmax(12 * logits_in.squeeze(), dim=-1)
+            score_ex  = th.softmax(12 * logits_ex.squeeze(), dim=-1) 
           
             if th.isnan(score).any():
                 score    = feat.masked_fill(score != score, 0)
@@ -301,8 +304,9 @@ class MSGIFSR(nn.Module):
             else:
                 score = (th.cat((score.unsqueeze(2), score_ex.unsqueeze(2)), dim=2) * phi).sum(2)
         else:
-            logits = sr @ target.t()
-            score  = th.softmax(12 * logits.squeeze(), dim=-1)
+            # print("no extra ****************")
+            logits = sr.squeeze() @ target.t()
+            score  = th.softmax(12 * logits, dim=-1)
         
         if self.order > 1 and self.fusion:
             alpha = th.softmax(self.alpha.unsqueeze(0), dim=-1).view(1, self.alpha.size(0), 1)
@@ -312,7 +316,9 @@ class MSGIFSR(nn.Module):
         elif self.order > 1:
             score = score[:, 0]
             
-        score = th.log(score + 1e-12)
+        # print(score.shape)
+            
+        score = th.log(score)
         
         return score
         

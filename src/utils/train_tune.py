@@ -111,7 +111,7 @@ class TrainRunner:
             self.scheduler.step()
             mrr, hit = evaluate(self.model, self.test_loader, self.device)
             
-            # wandb.log({"hit": hit, "mrr": mrr})
+            wandb.log({"hit": hit, "mrr": mrr})
 
             print(f'Epoch {self.epoch}: MRR = {mrr * 100:.3f}%, Hit = {hit * 100:.3f}%')
 

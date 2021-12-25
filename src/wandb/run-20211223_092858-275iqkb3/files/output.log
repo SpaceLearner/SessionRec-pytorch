@@ -1,0 +1,28 @@
+sh: nvidia-smi: command not found
+Using backend: pytorch
+Namespace(batch_size=512, dataset_dir='../datasets/diginetica', embedding_dim=256, epochs=30, extra=True, feat_drop=0.1, fusion=True, log_interval=100, lr=0.001, norm=True, num_layers=1, num_workers=4, order=3, patience=3, reducer='mean', valid_split=None, weight_decay=1e-05)
+reading dataset
+Traceback (most recent call last):
+  File "scripts/main_msgifsr_tune.py", line 152, in <module>
+    train_sessions, test_sessions, num_items = read_dataset(dataset_dir)
+  File "/Users/gjyan/Documents/Projects/lessr/SessionRec-pytorch/src/../src/utils/data/dataset.py", line 23, in read_dataset
+    train_sessions = read_sessions(dataset_dir / 'train.txt')
+  File "/Users/gjyan/Documents/Projects/lessr/SessionRec-pytorch/src/../src/utils/data/dataset.py", line 17, in read_sessions
+    sessions = pd.read_csv(filepath, sep='\t', header=None, squeeze=True)
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/util/_decorators.py", line 311, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 586, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 482, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 811, in __init__
+    self._engine = self._make_engine(self.engine)
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 1040, in _make_engine
+    return mapping[engine](self.f, **self.options)  # type: ignore[call-arg]
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 51, in __init__
+    self._open_handles(src, kwds)
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/io/parsers/base_parser.py", line 222, in _open_handles
+    self.handles = get_handle(
+  File "/Users/gjyan/anaconda3/envs/SHG/lib/python3.8/site-packages/pandas/io/common.py", line 702, in get_handle
+    handle = open(
+FileNotFoundError: [Errno 2] No such file or directory: '../datasets/diginetica/train.txt'

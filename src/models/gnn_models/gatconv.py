@@ -308,7 +308,7 @@ class GATConv(nn.Module):
                 rst = rst + resval
             # bias
             if self.bias is not None:
-                rst = rst + self.bias.view(1, self._num_heads, self._out_feats)
+                rst = rst + self.bias.view(1, -1, self._out_feats)
             # activation
             if self.activation:
                 rst = self.activation(rst)

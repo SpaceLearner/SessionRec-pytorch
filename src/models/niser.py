@@ -129,6 +129,7 @@ class NISER(nn.Module):
         
     def forward(self, mg, sg=None):
         iid = mg.ndata['iid']
+        
         feat = self.feat_drop(self.embedding(iid))
         if self.norm:
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True) + 1e-12)

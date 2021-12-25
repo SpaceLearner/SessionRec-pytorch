@@ -34,7 +34,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(get_freer_gpu())
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument(
-    '--dataset-dir', default='datasets/yoochoose1_64', help='the dataset directory'
+    '--dataset-dir', default='../datasets/sample', help='the dataset directory'
 )
 parser.add_argument('--embedding-dim', type=int, default=256, help='the embedding size')
 parser.add_argument('--num-layers', type=int, default=1, help='the number of layers')
@@ -51,7 +51,7 @@ parser.add_argument(
 parser.add_argument(
     '--weight-decay',
     type=float,
-    default=1e-5,
+    default=1e-4,
     help='the parameter for L2 regularization',
 )
 parser.add_argument(
@@ -63,7 +63,7 @@ parser.add_argument(
 parser.add_argument(
     '--num-workers',
     type=int,
-    default=0,
+    default=4,
     help='the number of processes to load the input graphs',
 )
 parser.add_argument(
@@ -100,7 +100,7 @@ parser.add_argument(
 parser.add_argument(
     '--extra',
     action='store_true',
-    help='whether use RE norm.',
+    help='whether use REnorm.',
 )
 
 parser.add_argument(
@@ -148,12 +148,12 @@ collate_fn = collate_fn_factory_ccs((seq_to_ccs_graph,), order=args.order)
 train_loader = DataLoader(
     train_set,
     batch_size=args.batch_size,
-    # shuffle=True,
+    shuffle=True,
     # drop_last=True,
     num_workers=args.num_workers,
     collate_fn=collate_fn,
     pin_memory=True,
-    sampler=SequentialSampler(train_set)
+    # sampler=SequentialSampler(train_set)
 )
 
 test_loader = DataLoader(
@@ -168,6 +168,8 @@ test_loader = DataLoader(
 model = MSGIFSR(num_items, args.dataset_dir, args.embedding_dim, args.num_layers, dropout=args.feat_drop, reducer=args.reducer, order=args.order, norm=args.norm, extra=args.extra, fusion=args.fusion, device=device)
 
 model = model.to(device)
+
+print(model)
 
 runner = TrainRunner(
     args.dataset_dir,
