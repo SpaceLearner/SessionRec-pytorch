@@ -36,4 +36,13 @@ bash start.sh $MODEL_NAME $DATASET_NAME
 
 We find that keeping the original order of training data makes the result better. It is due to the way of splitting the dataset. Current public session-based recommendation datasets usually split train/test data according to time. This will make the distribution of samples at the latter positions of the training data more similar to the test data than those at the former positions. Without shuffling the model will fit better. This is a common phemonemon in recommender systems since user interest evolves fast and too early samples will not help the recommendation. We also provide a version that shuffle the training dataset. In both setting the testing dataset is shuffled.
 
+## Follow our work
+
+@inproceedings{10.1145/3488560.3498524,
+author = {Jiayan Guo and Yaming Yang and Xiangchen Song and Yuan Zhang and Yujing Wang and Jing Bai and Yan Zhang},
+title = {Learning Multi-granularity User Intent Unit for Session-based Recommendation},
+year = {2022},
+booktitle = {the 15'th ACM International Conference on Web Search and Data Mining},
+}
+
 
