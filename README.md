@@ -40,10 +40,10 @@ We find that keeping the original order of training data makes the result better
 
 ```
 @inproceedings{10.1145/3488560.3498524,
-author = {Jiayan Guo and Yaming Yang and Xiangchen Song and Yuan Zhang and Yujing Wang and Jing Bai and Yan Zhang},
-title = {Learning Multi-granularity User Intent Unit for Session-based Recommendation},
-year = {2022},
-booktitle = {the 15'th ACM International Conference on Web Search and Data Mining},
+      author = {Jiayan Guo and Yaming Yang and Xiangchen Song and Yuan Zhang and Yujing Wang and Jing Bai and Yan Zhang},
+      title = {Learning Multi-granularity User Intent Unit for Session-based Recommendation},
+      year = {2022},
+      booktitle = {the 15'th ACM International Conference on Web Search and Data Mining},
 }
 ```
 
