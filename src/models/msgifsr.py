@@ -270,8 +270,7 @@ class MSGIFSR(nn.Module):
         sr   = th.cat([sr_l, sr_g], dim=-1)# .view(sr_l.size(0), -1)
         sr   = th.cat([self.fc_sr[i](sr).unsqueeze(1) for i, sr in enumerate(th.unbind(sr, dim=1))], dim=1)
         if self.norm:
-            sr = nn.functional.normalize(sr, dim=-1)
-        
+            sr = nn.functional.normalize(sr, dim=-1) 
         
         target = self.embeddings(self.indices)
         

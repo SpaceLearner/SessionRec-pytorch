@@ -1,40 +1,12 @@
 import argparse
-import os
-import numpy as np
-import torch
-import random
 import sys
 
 sys.path.append('..')
 sys.path.append('../..')
 
-def seed_torch(seed=42):
-    seed = int(seed)
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.enabled = True
-    
-seed_torch(123)
-
-def get_freer_gpu():
-    os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
-    memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-    # memory_available = memory_available[1:6]
-    if len(memory_available) == 0:
-        return -1
-    return int(np.argmax(memory_available))
-
-os.environ["CUDA_VISIBLE_DEVICES"] = str(get_freer_gpu())
-
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument(
-    '--dataset-dir', default='../datasets/sample', help='the dataset directory'
+    '--dataset-dir', default='datasets/sample', help='the dataset directory'
 )
 parser.add_argument('--embedding-dim', type=int, default=256, help='the embedding size')
 parser.add_argument('--num-layers', type=int, default=1, help='the number of layers')
@@ -57,7 +29,7 @@ parser.add_argument(
 parser.add_argument(
     '--patience',
     type=int,
-    default=3,
+    default=2,
     help='the number of epochs that the performance does not improves after which the training stops',
 )
 parser.add_argument(
@@ -78,82 +50,45 @@ parser.add_argument(
     default=100,
     help='print the loss after this number of iterations',
 )
-parser.add_argument(
-    '--order',
-    type=int,
-    default=3,
-    help='order of msg',
-)
-parser.add_argument(
-    '--reducer',
-    type=str,
-    default='mean',
-    help='method for reducer',
-)
-parser.add_argument(
-    '--norm',
-    type=bool,
-    default=True,
-    help='whether use l2 norm',
-)
-
-parser.add_argument(
-    '--extra',
-    action='store_true',
-    help='whether use REnorm.',
-)
-
-parser.add_argument(
-    '--fusion',
-    action='store_true',
-    help='whether use IFR.',
-)
-
 args = parser.parse_args()
 print(args)
 
 
 from pathlib import Path
-import os
-import numpy as np
 import torch as th
 from torch.utils.data import DataLoader, SequentialSampler
 from src.utils.data.dataset import read_dataset, AugmentedDataset
 from src.utils.data.collate import (
-    seq_to_ccs_graph,
-    collate_fn_factory_ccs
+    seq_to_session_graph,
+    collate_fn_factory,
 )
 from src.utils.train import TrainRunner
-from src.models import MSGIFSR
+from src.models import NISER
 
-
-device = th.device('cuda' if th.cuda.is_available() else 'cpu')
 dataset_dir = Path(args.dataset_dir)
 print('reading dataset')
 train_sessions, test_sessions, num_items = read_dataset(dataset_dir)
-# num_items += 5
 
 if args.valid_split is not None:
-    num_valid      = int(len(train_sessions) * args.valid_split)
-    test_sessions  = train_sessions[-num_valid:]
+    num_valid = int(len(train_sessions) * args.valid_split)
+    test_sessions = train_sessions[-num_valid:]
     train_sessions = train_sessions[:-num_valid]
 
 train_set = AugmentedDataset(train_sessions)
-test_set  = AugmentedDataset(test_sessions)
-print(len(train_set))
-print(len(test_set))
+test_set = AugmentedDataset(test_sessions)
 
-collate_fn = collate_fn_factory_ccs((seq_to_ccs_graph,), order=args.order)
+
+collate_fn = collate_fn_factory(seq_to_session_graph)
 
 train_loader = DataLoader(
     train_set,
     batch_size=args.batch_size,
-    # shuffle=True,
+    shuffle=True,
     # drop_last=True,
     num_workers=args.num_workers,
     collate_fn=collate_fn,
     pin_memory=True,
-    sampler=SequentialSampler(train_set)
+    # sampler=SequentialSampler(train_set)
 )
 
 test_loader = DataLoader(
@@ -162,13 +97,11 @@ test_loader = DataLoader(
     shuffle=True,
     num_workers=args.num_workers,
     collate_fn=collate_fn,
-    pin_memory=True
 )
 
-model = MSGIFSR(num_items, args.dataset_dir, args.embedding_dim, args.num_layers, dropout=args.feat_drop, reducer=args.reducer, order=args.order, norm=args.norm, extra=args.extra, fusion=args.fusion, device=device)
-
+model = NISER(num_items, args.embedding_dim, args.num_layers, feat_drop=args.feat_drop)
+device = th.device('cuda' if th.cuda.is_available() else 'cpu')
 model = model.to(device)
-
 print(model)
 
 runner = TrainRunner(

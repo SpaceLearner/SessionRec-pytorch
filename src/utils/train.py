@@ -80,6 +80,7 @@ class TrainRunner:
         self.epoch        = 0
         self.batch        = 0
         self.patience     = patience
+        self.kl_weight    = 0.02
 
     def train(self, epochs, log_interval=100):
         max_mrr = 0
@@ -90,13 +91,22 @@ class TrainRunner:
 
         mrr, hit = evaluate(self.model, self.test_loader, self.device)
         for epoch in tqdm(range(epochs)):
+            self.kl_weight = min(self.kl_weight+0.02, 1)
             self.model.train()
-            for batch in self.train_loader:
+            for idx, batch in enumerate(self.train_loader):
                 inputs, labels = prepare_batch(batch, self.device)
                 self.optimizer.zero_grad()
                 scores = self.model(*inputs)
                 assert not th.isnan(scores).any()
                 loss   = nn.functional.nll_loss(scores, labels)
+                
+                kl = 0.0
+                for module in self.model.modules():
+                    if hasattr(module, 'kl_reg'):
+                        kl = kl + module.kl_reg()
+                
+                loss += kl
+                
                 loss.backward()
                 self.optimizer.step()
                 
@@ -110,6 +120,10 @@ class TrainRunner:
                 self.batch += 1
             self.scheduler.step()
             mrr, hit = evaluate(self.model, self.test_loader, self.device)
+            
+            for i, c in enumerate(self.model.modules()):
+                if hasattr(c, 'kl_reg'):
+                    wandb.log({'sp_%s' % c.name: (c.log_alpha.data.numpy() > self.model.threshold).mean()}, step=self.batch)
             
             # wandb.log({"hit": hit, "mrr": mrr})
 

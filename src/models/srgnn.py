@@ -8,14 +8,19 @@ import dgl
 import dgl.ops as F
 import dgl.function as fn
 
+from .sparsevd import LinearSVDO
+
 class SRGNNLayer(nn.Module):
-    def __init__(self, input_dim, output_dim, batch_norm=False, feat_drop=0.0, activation=None):
+    def __init__(self, input_dim, output_dim, batch_norm=False, feat_drop=0.0, threshold=3.0, activation=None, name=None):
         super().__init__()
+        self.name       = name
         self.batch_norm = nn.BatchNorm1d(input_dim) if batch_norm else None
         self.dropout    = nn.Dropout(feat_drop)
         self.gru        = nn.GRUCell(2 * input_dim, output_dim)
-        self.W1         = nn.Linear(input_dim, output_dim, bias=False)
-        self.W2         = nn.Linear(input_dim, output_dim, bias=False)
+        # self.W1         = nn.Linear(input_dim, output_dim, bias=False)
+        # self.W2         = nn.Linear(input_dim, output_dim, bias=False)
+        self.W1         = LinearSVDO(input_dim, output_dim, threshold=threshold, bias=False, name=name+'W1')
+        self.W2         = LinearSVDO(input_dim, output_dim, threshold=threshold, bias=False, name=name+'W2')
         self.activation = activation
         
     def messager(self, edges):
@@ -58,19 +63,19 @@ class AttnReadout(nn.Module):
         output_dim,
         batch_norm=True,
         feat_drop=0.0,
+        threshold=3.0,
         activation=None,
+        name='AttnReadout'
     ):
         super().__init__()
         self.batch_norm = nn.BatchNorm1d(input_dim) if batch_norm else None
-        self.feat_drop = nn.Dropout(feat_drop)
-        self.fc_u = nn.Linear(input_dim, hidden_dim, bias=False)
-        self.fc_v = nn.Linear(input_dim, hidden_dim, bias=True)
-        self.fc_e = nn.Linear(hidden_dim, 1, bias=False)
-        self.fc_out = (
-            nn.Linear(input_dim, output_dim, bias=False)
+        self.feat_drop  = nn.Dropout(feat_drop)
+        self.fc_u       = LinearSVDO(input_dim, hidden_dim, threshold=threshold, bias=False, name=name+'_fc_u')
+        self.fc_v       = LinearSVDO(input_dim, hidden_dim, threshold=threshold, bias=True, name=name+'_fc_v')
+        self.fc_e       = LinearSVDO(hidden_dim, 1, threshold=threshold, bias=False, name=name+'_fc_e')
+        self.fc_out     = (nn.LinearSVDO(input_dim, output_dim, threshold=threshold, bias=False, name=name+'_fc_out')
             if output_dim != input_dim
-            else None
-        )
+            else None)
         self.activation = activation
 
     def forward(self, g, feat, last_nodes):
@@ -92,8 +97,10 @@ class AttnReadout(nn.Module):
 
 class SRGNN(nn.Module):
     
-    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0):
+    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, threshold=3.0, name="SRGNN"):
         super().__init__()
+        self.name = name
+        self.threshold = threshold
         self.embedding = nn.Embedding(num_items, embedding_dim)
         # self.indices = th.arange(num_items, dtype=th.long)
         self.register_buffer('indices', th.arange(num_items, dtype=th.long))
@@ -106,7 +113,9 @@ class SRGNN(nn.Module):
                 input_dim,
                 embedding_dim,
                 batch_norm=None,
-                feat_drop=feat_drop
+                feat_drop=feat_drop,
+                threshold=threshold,
+                name=name + "_SRGNNLayer" + "_" + str(i)
             )
             self.layers.append(layer)
         self.readout = AttnReadout(
@@ -115,11 +124,13 @@ class SRGNN(nn.Module):
             embedding_dim,
             batch_norm=None,
             feat_drop=feat_drop,
+            threshold=threshold,
             activation=None,
+            name=name+"_AttnReadout"
         )
         input_dim += embedding_dim
         self.feat_drop = nn.Dropout(feat_drop)
-        self.fc_sr = nn.Linear(input_dim, embedding_dim, bias=False)
+        self.fc_sr = LinearSVDO(input_dim, embedding_dim, threshold=threshold, bias=False, name=name+'_fc_sr')
         
         self.reset_parameters()
         
