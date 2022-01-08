@@ -97,7 +97,7 @@ class AttnReadout(nn.Module):
 
 class SRGNN(nn.Module):
     
-    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, threshold=50.0, name="SRGNN"):
+    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, threshold=3.0, name="SRGNN"):
         super().__init__()
         self.name = name
         self.threshold = threshold
