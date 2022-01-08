@@ -65,7 +65,7 @@ from src.utils.data.collate import (
     collate_fn_factory,
 )
 from src.utils.train import TrainRunner
-from src.models import NISER
+from src.models import SRGNN
 
 dataset_dir = Path(args.dataset_dir)
 print('reading dataset')
@@ -101,7 +101,7 @@ test_loader = DataLoader(
     collate_fn=collate_fn,
 )
 
-model = NISER(num_items, args.embedding_dim, args.num_layers, feat_drop=args.feat_drop)
+model = SRGNN(num_items, args.embedding_dim, args.num_layers, feat_drop=args.feat_drop)
 device = th.device('cuda' if th.cuda.is_available() else 'cpu')
 model = model.to(device)
 print(model)
