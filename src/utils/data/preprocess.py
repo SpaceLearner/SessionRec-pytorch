@@ -103,6 +103,7 @@ def train_test_split(df, test_split=0.2):
 
 def save_sessions(df, filepath):
     df = reorder_sessions_by_endtime(df)
+    print(df.heads())
     sessions = df.groupby('sessionId').itemId.apply(lambda x: ','.join(map(str, x)))
     sessions.to_csv(filepath, sep='\t', header=False, index=False)
 
@@ -117,15 +118,15 @@ def save_dataset(dataset_dir, df_train, df_test):
 
     # update itemId
     train_itemId_new, uniques = pd.factorize(df_train.itemId)
-    df_train = df_train.assign(itemId=train_itemId_new)
-    oid2nid = {oid: i for i, oid in enumerate(uniques)}
-    test_itemId_new = df_test.itemId.map(oid2nid)
-    df_test = df_test.assign(itemId=test_itemId_new)
+    df_train                  = df_train.assign(itemId=train_itemId_new)
+    oid2nid                   = {oid: i for i, oid in enumerate(uniques)}
+    test_itemId_new           = df_test.itemId.map(oid2nid)
+    df_test                   = df_test.assign(itemId=test_itemId_new)
 
     print(f'saving dataset to {dataset_dir}')
     dataset_dir.mkdir(parents=True, exist_ok=True)
     save_sessions(df_train, dataset_dir / 'train.txt')
-    save_sessions(df_test, dataset_dir / 'test.txt')
+    save_sessions(df_test,  dataset_dir / 'test.txt')
     num_items = len(uniques)
     with open(dataset_dir / 'num_items.txt', 'w') as f:
         f.write(str(num_items))
@@ -153,7 +154,6 @@ def preprocess_diginetica(dataset_dir, csv_file):
     df = filter_short_sessions(df)
     df_train, df_test = split_by_time(df, pd.Timedelta(days=7))
     save_dataset(dataset_dir, df_train, df_test)
-
 
 def preprocess_gowalla_lastfm(dataset_dir, csv_file, usecols, interval, n):
     print(f'reading {csv_file}...')
