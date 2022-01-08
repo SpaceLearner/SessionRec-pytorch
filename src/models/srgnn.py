@@ -141,7 +141,7 @@ class SRGNN(nn.Module):
         
     def forward(self, mg, sg=None):
         iid = mg.ndata['iid']
-        feat = self.feat_drop(F1.normalize(self.embedding(iid)))
+        feat = F1.normalize(self.feat_drop(self.embedding(iid)))
         
         out = feat
         for i, layer in enumerate(self.layers):
