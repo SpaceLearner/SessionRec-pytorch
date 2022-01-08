@@ -105,7 +105,7 @@ class TrainRunner:
                     if hasattr(module, 'kl_reg'):
                         kl = kl + module.kl_reg()
                 
-                # loss += (kl * self.kl_weight / len(self.train_loader))
+                loss += (kl * self.kl_weight / len(self.train_loader))
                 
                 loss.backward()
                 self.optimizer.step()
