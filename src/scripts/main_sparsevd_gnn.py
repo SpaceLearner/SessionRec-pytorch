@@ -1,5 +1,6 @@
 import argparse
 import sys
+import wandb
 
 sys.path.append('..')
 sys.path.append('../..')
@@ -53,6 +54,7 @@ parser.add_argument(
 args = parser.parse_args()
 print(args)
 
+wandb.init(config=vars(args), project='sparsevd')
 
 from pathlib import Path
 import torch as th
