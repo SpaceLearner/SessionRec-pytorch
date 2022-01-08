@@ -117,7 +117,7 @@ class TrainRunner:
                     t = time.time()
                     mean_loss = 0
                 
-                print('here')
+                # print('here')
                 for i, c in enumerate(self.model.modules()):
                     if hasattr(c, 'kl_reg'):
                         wandb.log({'sp_%s' % c.name: (c.log_alpha.data.cpu().numpy() > self.model.threshold).mean()}, step=self.batch)
