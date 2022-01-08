@@ -117,13 +117,16 @@ class TrainRunner:
                     t = time.time()
                     mean_loss = 0
                     
+                for i, c in enumerate(self.model.modules()):
+                    if hasattr(c, 'kl_reg'):
+                        wandb.log({'sp_%s' % c.name: (c.log_alpha.data.cpu().numpy() > self.model.threshold).mean()}, step=self.batch)
+                    
                 self.batch += 1
+                
             self.scheduler.step()
             mrr, hit = evaluate(self.model, self.test_loader, self.device)
             
-            for i, c in enumerate(self.model.modules()):
-                if hasattr(c, 'kl_reg'):
-                    wandb.log({'sp_%s' % c.name: (c.log_alpha.data.cpu().numpy() > self.model.threshold).mean()}, step=self.batch)
+            
             
             # wandb.log({"hit": hit, "mrr": mrr})
 
