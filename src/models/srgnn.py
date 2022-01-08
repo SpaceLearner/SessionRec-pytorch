@@ -141,21 +141,26 @@ class SRGNN(nn.Module):
         
     def forward(self, mg, sg=None):
         iid = mg.ndata['iid']
-        feat = self.feat_drop(self.embedding(iid))
+        feat = self.feat_drop(F.normalize(self.embedding(iid)))
         
         out = feat
         for i, layer in enumerate(self.layers):
             out = layer(mg, out)
 
+        feat = out
+
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         
+        feat = F.normalize(feat)        
         sr_g = self.readout(mg, feat, last_nodes)
         sr_l = feat[last_nodes]
         sr = th.cat([sr_l, sr_g], dim=1)
         sr = self.fc_sr(sr)
         target = self.embedding(self.indices)
+        sr = F.normalize(sr)
+        target = F.normalize(target)
         logits = sr @ target.t()
-        logits = th.log(nn.functional.softmax(logits, dim=-1))
+        logits = th.log(nn.functional.softmax(logits * 12, dim=-1))
         return logits# , 0
         
         

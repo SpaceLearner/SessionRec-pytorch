@@ -65,7 +65,7 @@ from src.utils.data.collate import (
     collate_fn_factory,
 )
 from src.utils.train import TrainRunner
-from src.models import SRGNN
+from src.models import NISER
 
 dataset_dir = Path(args.dataset_dir)
 print('reading dataset')
