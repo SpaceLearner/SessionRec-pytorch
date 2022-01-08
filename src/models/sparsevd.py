@@ -21,8 +21,8 @@ class LinearSVDO(nn.Module):
 
     def reset_parameters(self):
         self.bias.data.zero_()
-        # self.W.data.normal_(0, 0.02)
-        nn.init.xavier_uniform_(self.W)
+        self.W.data.normal_(0, 0.02)
+        # nn.init.xavier_uniform_(self.W)
         self.log_sigma.data.fill_(-5)        
         
     def forward(self, x):
