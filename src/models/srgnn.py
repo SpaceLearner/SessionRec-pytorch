@@ -2,7 +2,7 @@ import math
 
 import torch as th
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as F1
 
 import dgl
 import dgl.ops as F
@@ -141,7 +141,7 @@ class SRGNN(nn.Module):
         
     def forward(self, mg, sg=None):
         iid = mg.ndata['iid']
-        feat = self.feat_drop(F.normalize(self.embedding(iid)))
+        feat = self.feat_drop(F1.normalize(self.embedding(iid)))
         
         out = feat
         for i, layer in enumerate(self.layers):
@@ -151,14 +151,14 @@ class SRGNN(nn.Module):
 
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         
-        feat = F.normalize(feat)        
+        feat = F1.normalize(feat)        
         sr_g = self.readout(mg, feat, last_nodes)
         sr_l = feat[last_nodes]
         sr = th.cat([sr_l, sr_g], dim=1)
         sr = self.fc_sr(sr)
         target = self.embedding(self.indices)
-        sr = F.normalize(sr)
-        target = F.normalize(target)
+        sr = F1.normalize(sr)
+        target = F1.normalize(target)
         logits = sr @ target.t()
         logits = th.log(nn.functional.softmax(logits * 12, dim=-1))
         return logits# , 0
