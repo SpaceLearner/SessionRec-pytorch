@@ -94,6 +94,7 @@ class TrainRunner:
             
             self.model.train()
             for idx, batch in enumerate(self.train_loader):
+                self.kl_weight = min(self.kl_weight+0.02, 1)
                 inputs, labels = prepare_batch(batch, self.device)
                 self.optimizer.zero_grad()
                 scores = self.model(*inputs)
@@ -114,7 +115,6 @@ class TrainRunner:
                 mean_loss += loss.item() / log_interval
                 
                 if self.batch > 0 and self.batch % log_interval == 0:
-                    self.kl_weight = min(self.kl_weight+0.02, 1)
                     print(f'Batch {self.batch}: Loss = {mean_loss:.4f}, Time Elapsed = {time.time() - t:.2f}s')
                     t = time.time()
                     mean_loss = 0
