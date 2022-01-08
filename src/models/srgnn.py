@@ -137,6 +137,7 @@ class SRGNN(nn.Module):
     def reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.embedding_dim)
         for weight in self.parameters():
+            print(weight)
             weight.data.uniform_(-stdv, stdv)
         
     def forward(self, mg, sg=None):
