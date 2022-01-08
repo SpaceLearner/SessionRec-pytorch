@@ -10,6 +10,8 @@ class LinearSVDO(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.threshold = threshold
+        
+        self.hasbias = bias
 
         self.W = Parameter(torch.Tensor(out_features, in_features))
         self.log_sigma = Parameter(torch.Tensor(out_features, in_features))
@@ -19,7 +21,8 @@ class LinearSVDO(nn.Module):
 
     def reset_parameters(self):
         self.bias.data.zero_()
-        self.W.data.normal_(0, 0.02)
+        # self.W.data.normal_(0, 0.02)
+        nn.init.xavier_uniform_(self.W)
         self.log_sigma.data.fill_(-5)        
         
     def forward(self, x):
@@ -32,7 +35,8 @@ class LinearSVDO(nn.Module):
             eps = lrt_std.data.new(lrt_std.size()).normal_()
             return lrt_mean + lrt_std * eps
     
-        return F.linear(x, self.W * (self.log_alpha < 3).float()) + self.bias
+        # return F.linear(x, self.W * (self.log_alpha < 3).float()) + self.bias
+        return F.linear(x, self.W) + self.bias if self.hasbias else F.linear(x, self.W)
         
     def kl_reg(self):
         # Return KL here -- a scalar 
