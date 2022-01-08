@@ -35,8 +35,8 @@ class LinearSVDO(nn.Module):
             eps = lrt_std.data.new(lrt_std.size()).normal_()
             return lrt_mean + lrt_std * eps
     
-        # return F.linear(x, self.W * (self.log_alpha < 3).float()) + self.bias
-        return F.linear(x, self.W) + self.bias if self.hasbias else F.linear(x, self.W)
+        return F.linear(x, self.W * (self.log_alpha < 3).float()) + self.bias if self.hasbias else F.linear(x, self.W * (self.log_alpha < 3).float()) 
+        # return F.linear(x, self.W) + self.bias if self.hasbias else F.linear(x, self.W)
         
     def kl_reg(self):
         # Return KL here -- a scalar 
