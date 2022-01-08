@@ -36,7 +36,7 @@ class LinearSVDO(nn.Module):
         
     def kl_reg(self):
         # Return KL here -- a scalar 
-        k1, k2, k3 = torch.Tensor([0.63576]), torch.Tensor([1.8732]), torch.Tensor([1.48695])
+        k1, k2, k3 = torch.Tensor([0.63576]).to(self.W.device), torch.Tensor([1.8732]).to(self.W.device), torch.Tensor([1.48695]).to(self.W.device)
         kl = k1 * torch.sigmoid(k2 + k3 * self.log_alpha) - 0.5 * torch.log1p(torch.exp(-self.log_alpha))
         a = - torch.sum(kl)
         return a
