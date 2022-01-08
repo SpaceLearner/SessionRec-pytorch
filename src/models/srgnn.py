@@ -132,7 +132,7 @@ class SRGNN(nn.Module):
         self.feat_drop = nn.Dropout(feat_drop)
         self.fc_sr = LinearSVDO(input_dim, embedding_dim, threshold=threshold, bias=False, name=name+'_fc_sr')
         
-        # self.reset_parameters()
+        self.reset_parameters()
         
     def reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.embedding_dim)
