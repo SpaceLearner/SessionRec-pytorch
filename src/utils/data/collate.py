@@ -1,6 +1,7 @@
 from collections import Counter
 import numpy as np
 import torch as th
+import torch.nn.functional as F
 import dgl
 import pickle
 import numba
@@ -79,6 +80,35 @@ def seq_to_session_graph(seq):
     
     g.edata['w'] = weight
     # print(g.edata)
+    g.ndata['iid'] = th.from_numpy(items)
+    label_last(g, iid2nid[seq[-1]])
+
+    return g
+
+def seq_to_temporal_session_graph(seq, times):
+    items, indices = np.unique(seq, return_index=True)
+    iid2nid = {iid: i for i, iid in enumerate(items)}
+    num_nodes = len(items)
+
+    seq_nid = [iid2nid[iid] for iid in seq]
+    counter = Counter(
+        [(seq_nid[i], seq_nid[i+1]) for i in range(len(seq)-1)]
+    )
+    edges = counter.keys()
+    if len(edges) > 0:
+        src, dst = zip(*edges)
+        weight = th.tensor(list(counter.values()))
+    else:
+        src, dst = [0], [0]
+        weight = th.ones(1).long()
+
+    g = dgl.graph((src, dst), num_nodes=num_nodes)
+    
+    g.edata['w'] = weight
+    # print(len(times), g.number_of_nodes())
+    g.ndata['t'] = th.tensor(times)[indices]
+    # print(g.edata)
+    
     g.ndata['iid'] = th.from_numpy(items)
     label_last(g, iid2nid[seq[-1]])
 
@@ -226,6 +256,23 @@ def collate_fn_factory(*seq_to_graph_fns):
             inputs.append(bg)
         labels = th.LongTensor(labels)
         return inputs, labels
+
+    return collate_fn
+
+def collate_fn_factory_temporal(*seq_to_graph_fns):
+    def collate_fn(samples):
+        seqs, times, labels = zip(*samples)
+        inputs     = []
+        for seq_to_graph in seq_to_graph_fns:
+            graphs    = list(map(seq_to_graph, seqs, times))    
+            num_nodes = th.tensor([graph.number_of_nodes() for graph in graphs], dtype=th.long) 
+            max_num   = max(num_nodes)
+            embeds_id = th.vstack([F.pad(graph.ndata['iid'], (0, max_num-len(graph.ndata['iid'])), value=graph.ndata['iid'][-1]) for graph in graphs])
+            times     = th.vstack([F.pad(graph.ndata['t'],   (0, max_num-len(graph.ndata['iid'])), value=graph.ndata['iid'][-1]) for graph in graphs])
+            bg = dgl.batch(graphs)
+            inputs.append(bg)
+        labels = th.LongTensor(labels)
+        return inputs, labels, embeds_id, times, num_nodes
 
     return collate_fn
 

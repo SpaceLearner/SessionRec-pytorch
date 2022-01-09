@@ -1,4 +1,5 @@
 import itertools
+from os import read
 import numpy as np
 import pandas as pd
 
@@ -18,17 +19,24 @@ def read_sessions(filepath):
     sessions = sessions.apply(lambda x: list(map(int, x.split(',')))).values
     return sessions
 
+def read_timestamps(filepath):
+    sessions = pd.read_csv(filepath, sep='\t', header=None, squeeze=True)
+    sessions = sessions.apply(lambda x: list(map(float, x.split(',')))).values
+    return sessions
 
 def read_dataset(dataset_dir):
-    train_sessions = read_sessions(dataset_dir / 'train.txt')
-    test_sessions = read_sessions(dataset_dir / 'test.txt')
+    train_sessions  = read_sessions(dataset_dir   / 'train.txt')
+    test_sessions   = read_sessions(dataset_dir   / 'test.txt')
+    train_timestamp = read_timestamps(dataset_dir / 'train_timestamp.txt')
+    test_timestamp  = read_timestamps(dataset_dir / 'test_timestamp.txt') 
     with open(dataset_dir / 'num_items.txt', 'r') as f:
         num_items = int(f.readline())
-    return train_sessions, test_sessions, num_items
+    return train_sessions, test_sessions, train_timestamp, test_timestamp, num_items
 
 class AugmentedDataset:
-    def __init__(self, sessions, sort_by_length=False):
-        self.sessions = sessions
+    def __init__(self, sessions, timestamps, sort_by_length=False):
+        self.sessions   = sessions
+        self.timestamps = timestamps
         # self.graphs = graphs
         index = create_index(sessions)  # columns: sessionId, labelIndex
 
@@ -41,10 +49,13 @@ class AugmentedDataset:
     def __getitem__(self, idx):
         #print(idx)
         sid, lidx = self.index[idx]
-        seq = self.sessions[sid][:lidx]
-        label = self.sessions[sid][lidx]
+        seq       = self.sessions[sid][:lidx]
+        label     = self.sessions[sid][lidx]
+        times     = self.timestamps[sid][:lidx]#  - self.sessions[sid][0]
+        temp      = times[0]
+        times     = [(t - temp) // 10000 for t in times]
         
-        return seq, label #,seq
+        return seq, times, label #,seq
 
     def __len__(self):
         return len(self.index)

@@ -24,12 +24,15 @@ def fix_weight_decay(model):
 
 
 def prepare_batch(batch, device):
-    inputs, labels = batch
+    inputs, labels, embeds_ids, times, num_nodes = batch
     # inputs, labels = batch
     inputs_gpu  = [x.to(device) for x in inputs]
     labels_gpu  = labels.to(device)
+    embeds_ids  = embeds_ids.to(device)
+    times       = times.to(device)
+    num_nodes   = num_nodes.to(device)
    
-    return inputs_gpu, labels_gpu 
+    return inputs_gpu, labels_gpu, embeds_ids, times, num_nodes
     # return inputs_gpu, 0, labels_gpu, 0
 
 
@@ -41,8 +44,8 @@ def evaluate(model, data_loader, device, cutoff=20):
 
     with th.no_grad():
         for batch in data_loader:
-            inputs, labels = prepare_batch(batch, device)
-            logits = model(*inputs)
+            inputs, labels, embeds_ids, times, num_nodes = prepare_batch(batch, device)
+            logits = model(*inputs, embeds_ids, times, num_nodes)
         
             batch_size   = logits.size(0)
             num_samples += batch_size
@@ -92,9 +95,9 @@ class TrainRunner:
         for epoch in tqdm(range(epochs)):
             self.model.train()
             for batch in self.train_loader:
-                inputs, labels = prepare_batch(batch, self.device)
+                inputs, labels, embeds_ids, times, num_nodes = prepare_batch(batch, self.device)
                 self.optimizer.zero_grad()
-                scores = self.model(*inputs)
+                scores = self.model(*inputs, embeds_ids, times, num_nodes)
                 assert not th.isnan(scores).any()
                 loss   = nn.functional.nll_loss(scores, labels)
                 loss.backward()

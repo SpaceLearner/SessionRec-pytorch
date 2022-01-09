@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-
+import time
 
 def get_session_id(df, interval):
     df_prev = df.shift()
@@ -103,10 +103,17 @@ def train_test_split(df, test_split=0.2):
 
 def save_sessions(df, filepath):
     df = reorder_sessions_by_endtime(df)
-    print(df.heads())
-    sessions = df.groupby('sessionId').itemId.apply(lambda x: ','.join(map(str, x)))
+    sessions = df.groupby('sessionId')# .
+    sessions = sessions.itemId.apply(lambda x: ','.join(map(str, x)))
     sessions.to_csv(filepath, sep='\t', header=False, index=False)
-
+    # sessions_timestamp = sessions.timestamp.apply(lambda x: ','.join(map(str, x)))
+    
+def save_sessions_timestamp(df, filepath):
+    df = reorder_sessions_by_endtime(df)
+    df['timestamp'] = df['timestamp'].apply(lambda x: time.mktime(x.timetuple()))
+    sessions = df.groupby('sessionId')# .
+    sessions = sessions.timestamp.apply(lambda x: ','.join(map(str, x)))
+    sessions.to_csv(filepath, sep='\t', header=False, index=False) 
 
 def save_dataset(dataset_dir, df_train, df_test):
     # filter items in test but not in train
@@ -127,6 +134,8 @@ def save_dataset(dataset_dir, df_train, df_test):
     dataset_dir.mkdir(parents=True, exist_ok=True)
     save_sessions(df_train, dataset_dir / 'train.txt')
     save_sessions(df_test,  dataset_dir / 'test.txt')
+    save_sessions_timestamp(df_train, dataset_dir / 'train_timestamp.txt')
+    save_sessions_timestamp(df_test,  dataset_dir / 'test_timestamp.txt')
     num_items = len(uniques)
     with open(dataset_dir / 'num_items.txt', 'w') as f:
         f.write(str(num_items))
