@@ -1,6 +1,6 @@
 from pathlib import Path
 import argparse
-import time
+
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
