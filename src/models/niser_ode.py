@@ -193,7 +193,7 @@ class NISER_ODE(nn.Module):
         
         time_embeds = self.recover(z_T[:, 1])
         
-        out += time_embeds
+       #  out += time_embeds
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
@@ -201,7 +201,7 @@ class NISER_ODE(nn.Module):
         sr_g = self.readout(mg, feat, last_nodes)
         sr_l = feat[last_nodes]
         sr = th.cat([sr_l, sr_g], dim=1)
-        sr = self.fc_sr(sr)
+        sr = self.fc_sr(sr) + time_embeds
         if self.norm:
             sr = sr.div(th.norm(sr, p=2, dim=-1, keepdim=True) + 1e-12)
         target = self.embedding(self.indices)
