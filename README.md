@@ -6,7 +6,7 @@ This is the official implementation of **Learning Multi-granularity User Intent 
 
 ## Baselines
 
-We also reimplemented several current session-based recommendation baselines including SRGNN, NISER+, SGNN-GN and tuned them through our best effert. They are summarized as follows. Leaderboards are comming soon.
+We also reimplemented several current session-based recommendation baselines including SRGNN, NISER+, SGNN-HN and tuned them through our best effert. They are summarized as follows. Leaderboards are comming soon.
 
 ## Dataset
 
