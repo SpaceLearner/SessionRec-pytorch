@@ -53,7 +53,7 @@ class AugmentedDataset:
         label     = self.sessions[sid][lidx]
         times     = self.timestamps[sid][:lidx]#  - self.sessions[sid][0]
         temp      = times[0]
-        times     = [(t - temp) // 10000 for t in times]
+        times     = [(t - temp) // 100000 for t in times]
         
         return seq, times, label #,seq
 
