@@ -10,10 +10,7 @@ import dgl.function as fn
 
 from dgl.nn.pytorch import GraphConv
 
-import torchcde
 from torchdiffeq import odeint_adjoint
-
-odeint_adjoint()
 
 class GraphGRUODE(nn.Module):
     
