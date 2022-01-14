@@ -73,7 +73,7 @@ class GraphGRUODE(nn.Module):
         # graph      = dgl.add_self_loop(graph)
         x = self.x
 
-        print(x.shape)
+        print(x.device, graph.device, self.device)
         if self.gnn != 'Linear':
             # x = self.lin_xx(torch.cat((self.x.to(self.device), h), dim=1), edge_index).to(self.device)
             xr, xz, xh = self.lin_xr(graph, x), self.lin_xz(graph, x), self.lin_xh(graph, x)
