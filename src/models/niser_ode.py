@@ -270,7 +270,7 @@ class NISER_ODE(nn.Module):
         self.ODEFunc.set_x(feat)
         t_end = mg.edata['t'].max()
         t     = th.tensor([0., t_end], device=mg.device)
-        print(t)
+        # print(t)
         feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='euler')[-1]
         
         print(feat.shape)
