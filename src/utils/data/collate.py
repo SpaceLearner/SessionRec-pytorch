@@ -112,7 +112,7 @@ def seq_to_temporal_session_graph(seq, times):
     if g.number_of_edges() == 1 and g.number_of_nodes() == 1:
         g.edata['t'] = th.tensor(times)[0].unsqueeze(-1)
     else:
-        g.edata['t'] = th.tensor(times)[-g.number_of_edges():].unsqueeze(-1)
+        g.edata['t'] = th.tensor(times)[-g.number_of_edges():]
     
     # print(g.edata)
     
