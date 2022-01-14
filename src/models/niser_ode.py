@@ -48,13 +48,11 @@ class GraphGRUODE(nn.Module):
         self.edge_index = None
         self.x = None
 
-        self.reset_parameters()
+    #     self.reset_parameters()
 
-    def reset_parameters(self):
+    # def reset_parameters(self):
 
-        for module in self.modules():
-            if hasattr(module, "reset_parameters"):
-                module.reset_parameters()
+    #     self.lin_xz.reset_parameters()
 
     def set_graph(self, graph: dgl.DGLGraph):
     
