@@ -108,13 +108,13 @@ def seq_to_temporal_session_graph(seq, times):
     # print(len(times), g.number_of_nodes())
     g.ndata['t'] = th.tensor(times)[indices]
     
-    print(g.edata, times, g.number_of_edges(), g.number_of_nodes())
+    # print(g.edata, times, g.number_of_edges(), g.number_of_nodes())
     if g.number_of_edges() == 1 and g.number_of_nodes() == 1:
-        g.edata['t'] = th.tensor(times)[0]
+        g.edata['t'] = th.tensor(times)[0].unsqueeze(0)
     else:
         g.edata['t'] = th.tensor(times)[-g.number_of_edges():] 
     
-    print(g.edata)
+    # print(g.edata)
     
     g.ndata['iid'] = th.from_numpy(items)
     label_last(g, iid2nid[seq[-1]])
