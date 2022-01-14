@@ -241,7 +241,7 @@ class NISER_ODE(nn.Module):
             activation=None,
         )
         
-        self.ODEFunc = GraphGRUODE(self.embedding_dim, self.embedding_dim // 2, device=th.device('cuda:0'))
+        self.ODEFunc = GraphGRUODE(self.embedding_dim, self.embedding_dim, device=th.device('cuda:0'))
 
         self.feat_drop = nn.Dropout(feat_drop)
         self.fc_sr = nn.Linear(input_dim + embedding_dim, embedding_dim, bias=False)
