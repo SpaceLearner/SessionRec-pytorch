@@ -27,12 +27,12 @@ class GraphGRUODE(nn.Module):
         if self.gnn == 'GCNConv':
             # self.lin_xx = GCNConv(self.in_dim+self.hid_dim, self.hid_dim, bias=self.bias)
             # self.lin_hx = nn.Linear(self.hid_dim, self.in_dim, bias=self.bias)
-            self.lin_xz = GraphConv(self.in_dim, self.hid_dim, bias=self.bias)
-            self.lin_xr = GraphConv(self.in_dim, self.hid_dim, bias=self.bias)
-            self.lin_xh = GraphConv(self.in_dim, self.hid_dim, bias=self.bias)
-            self.lin_hz = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias)
-            self.lin_hr = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias)
-            self.lin_hh = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_xz = GraphConv(self.in_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_xr = GraphConv(self.in_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_xh = GraphConv(self.in_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_hz = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_hr = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_hh = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
         elif self.gnn == 'Linear':
             self.lin_xx = nn.Linear(self.in_dim, self.hid_dim, bias=self.bias)
             self.lin_hx = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
@@ -70,7 +70,7 @@ class GraphGRUODE(nn.Module):
         edge_idx   = self.graph.filter_edges(lambda edges: edges.data['t'] <= t)
         edge_index = self.graph.edges()
         graph      = dgl.graph((edge_index[0][edge_idx], edge_index[1][edge_idx]), num_nodes=self.graph.number_of_nodes(), device=self.device)
-        graph      = dgl.add_self_loop(graph)
+        # graph      = dgl.add_self_loop(graph)
         x = self.x
 
         if self.gnn != 'Linear':
