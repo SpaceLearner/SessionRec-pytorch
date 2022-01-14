@@ -59,7 +59,7 @@ class GraphGRUODE(nn.Module):
         self.graph = graph
 
     def set_x(self, x): 
-        self.x = x
+        self.x = x.to(self.device)
 
     def forward(self, t, h):
 
@@ -254,6 +254,7 @@ class NISER_ODE(nn.Module):
             weight.data.uniform_(-stdv, stdv)
         
     def forward(self, mg, embeds_ids, times, num_nodes):
+        
         iid = mg.ndata['iid']
         
         feat = self.feat_drop(self.embedding(iid))
