@@ -67,7 +67,7 @@ class GraphGRUODE(nn.Module):
 
         # edge_index = self.edge_index_batchs[0]
         
-        edge_idx   = self.graph.filter_edges(self.graph.edata['t'] <= t)
+        edge_idx   = self.graph.filter_edges(lambda edges: edges.data['t'] <= t)
         edge_index = self.graph.edges()
         graph      = dgl.graph((edge_index[0][edge_idx], edge_index[1][edge_idx]), num_nodes=self.graph.number_of_nodes(), device=self.device)
         
