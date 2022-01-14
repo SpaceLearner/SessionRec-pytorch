@@ -107,7 +107,8 @@ def seq_to_temporal_session_graph(seq, times):
     g.edata['w'] = weight
     # print(len(times), g.number_of_nodes())
     g.ndata['t'] = th.tensor(times)[indices]
-    g.edata['t'] = th.tensor(times[1:][indices])
+    print(g.ndata['t'])
+    g.edata['t'] = th.tensor(times)[indices][1:]
     print(g.edata)
     
     g.ndata['iid'] = th.from_numpy(items)
