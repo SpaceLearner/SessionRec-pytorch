@@ -269,9 +269,11 @@ class NISER_ODE(nn.Module):
         self.ODEFunc.set_graph(mg)
         self.ODEFunc.set_x(feat)
         t_end = mg.edata['t'].max()
-        t     = th.tensor([0., t_end], device=mg.device)
+        t     = th.tensor([0., t_end / 10], device=mg.device)
         print(t)
-        feat  = odeint_adjoint(self.ODEFunc, feat, t=t)[-1]
+        feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='eulr')[-1]
+        
+        print(feat.shape)
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
