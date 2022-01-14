@@ -108,7 +108,10 @@ def seq_to_temporal_session_graph(seq, times):
     # print(len(times), g.number_of_nodes())
     g.ndata['t'] = th.tensor(times)[indices]
     print(g.ndata['t'])
-    g.edata['t'] = th.tensor(times)[indices][1:]
+    if g.number_of_edges > 0:
+        g.edata['t'] = th.tensor(times)[indices][1:]
+    else:
+        g.edata['t'] = th.tensor([])
     print(g.edata)
     
     g.ndata['iid'] = th.from_numpy(items)
