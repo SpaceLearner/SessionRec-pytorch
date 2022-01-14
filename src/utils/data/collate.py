@@ -108,6 +108,7 @@ def seq_to_temporal_session_graph(seq, times):
     # print(len(times), g.number_of_nodes())
     g.ndata['t'] = th.tensor(times)[indices]
     print(g.ndata['t'])
+    print(times)
     g.edata['t'] = th.tensor(times)[1:]
     
     print(g.edata)
