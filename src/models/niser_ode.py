@@ -264,15 +264,14 @@ class NISER_ODE(nn.Module):
         out = feat
         for i, layer in enumerate(self.layers):
             out = layer(mg, out)
-        feat = out
+        # feat = out
             
-        print(X.interval)
         self.ODEFunc.set_graph(mg)
         self.ODEFunc.set_x(feat)
         t_end = mg.edata['t'].max()
         t     = th.tensor([0., t_end / 10], device=mg.device)
         # print(t)
-        feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='rk4')[-1] + feat
+        feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='rk4')[-1] + out
         
         # print(feat.shape)
             
