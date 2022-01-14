@@ -266,12 +266,12 @@ class NISER_ODE(nn.Module):
         #     out = layer(mg, out)
             
         # print(X.interval)
-        # self.ODEFunc.set_graph(mg)
-        # self.ODEFunc.set_x(feat)
-        # t_end = mg.edata['t'].max()
-        # t     = th.tensor([0., t_end], device=mg.device)
-        # # print(t)
-        # feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='euler')[-1] + feat
+        self.ODEFunc.set_graph(mg)
+        self.ODEFunc.set_x(feat)
+        t_end = mg.edata['t'].max()
+        t     = th.tensor([0., t_end / 10], device=mg.device)
+        # print(t)
+        feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='euler')[-1] + feat
         
         # print(feat.shape)
             
