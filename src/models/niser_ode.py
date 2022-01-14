@@ -8,7 +8,95 @@ import dgl
 import dgl.ops as F
 import dgl.function as fn
 
+from dgl.nn.pytorch import GraphConv
+
 import torchcde
+from torchdiffeq import odeint_adjoint
+
+odeint_adjoint()
+
+class GraphGRUODE(nn.Module):
+    
+    def __init__(self, in_dim, hid_dim, device=th.device('cpu'), gnn='GCNConv', bias=True, **kwargs):
+    
+        super(GraphGRUODE, self).__init__()
+
+        self.in_dim = in_dim
+        self.hid_dim = hid_dim
+        self.device = device
+        self.gnn = gnn
+        self.bias = bias
+
+        if self.gnn == 'GCNConv':
+            # self.lin_xx = GCNConv(self.in_dim+self.hid_dim, self.hid_dim, bias=self.bias)
+            # self.lin_hx = nn.Linear(self.hid_dim, self.in_dim, bias=self.bias)
+            self.lin_xz = GraphConv(self.in_dim, self.hid_dim, bias=self.bias)
+            self.lin_xr = GraphConv(self.in_dim, self.hid_dim, bias=self.bias)
+            self.lin_xh = GraphConv(self.in_dim, self.hid_dim, bias=self.bias)
+            self.lin_hz = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_hr = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_hh = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias)
+        elif self.gnn == 'Linear':
+            self.lin_xx = nn.Linear(self.in_dim, self.hid_dim, bias=self.bias)
+            self.lin_hx = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_xz = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_xr = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_xh = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_hz = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_hr = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
+            self.lin_hh = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
+        else:
+            raise NotImplementedError
+
+        self.edge_index = None
+        self.x = None
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+
+        for module in self.modules():
+            if hasattr(module, "reset_parameters"):
+                module.reset_parameters()
+
+    def set_graph(self, graph: dgl.DGLGraph):
+    
+        self.graph = graph
+
+    def set_x(self, x): 
+        self.x = x
+
+    def forward(self, t, h):
+
+        # x = torch.zeros_like(h).to(self.device)
+
+        # edge_index = self.edge_index_batchs[0]
+        
+        edge_idx   = self.graph.filter_edges(self.graph.edata['t'] <= t)
+        edge_index = self.graph.edges()
+        graph      = dgl.graph((edge_index[0][edge_idx], edge_index[1][edge_idx]), num_nodes=self.graph.number_of_nodes(), device=self.device)
+        
+        x = self.x
+
+        if self.gnn != 'Linear':
+            # x = self.lin_xx(torch.cat((self.x.to(self.device), h), dim=1), edge_index).to(self.device)
+            xr, xz, xh = self.lin_xr(graph, x), self.lin_xz(graph, x), self.lin_xh(graph, x)
+            r = th.sigmoid(xr + self.lin_hr(h, edge_index))
+            z = th.sigmoid(xz + self.lin_hz(h, edge_index))
+            u = th.tanh(xh + self.lin_hh(r * h, edge_index))
+        else:
+            # print(h.shape)
+            h = self.lin_hx(h)+self.lin_xx(x)
+            # x = self.propagate(edge_index=edge_index, x=h, aggr='mean')-h
+            xr, xz, xh = self.lin_xr(x), self.lin_xz(x), self.lin_xh(x)
+            r = th.sigmoid(xr + self.lin_hr(h))
+            z = th.sigmoid(xz + self.lin_hz(h))
+            u = th.tanh(xh + self.lin_hh(r * h))
+
+
+        dh = (1 - z) * (u - h)
+        # self.x = self.hx(dh, edge_index)
+        return dh
 
 class CDEFunc(nn.Module):
     def __init__(self, input_channels, hidden_channels):
@@ -27,6 +115,11 @@ class CDEFunc(nn.Module):
     # For most purposes the t argument can probably be ignored; unless you want your CDE to behave differently at
     # different times, which would be unusual. But it's there if you need it!
     ######################
+    
+    def set_graph(self, graph: dgl.DGLGraph):
+        
+        self.graph = graph
+    
     def forward(self, t, z):
         # z has shape (batch, hidden_channels)
         z = self.linear1(z)
@@ -151,14 +244,11 @@ class NISER_ODE(nn.Module):
             feat_drop=feat_drop,
             activation=None,
         )
+        
+        self.ODEFunc = GraphGRUODE(self.embedding_dim, self.embedding_dim // 2, device=self.readout.fc_u.weight.device)
 
         self.feat_drop = nn.Dropout(feat_drop)
         self.fc_sr = nn.Linear(input_dim + embedding_dim, embedding_dim, bias=False)
-        
-        self.reduce   = nn.Linear(embedding_dim, 32)
-        self.recover  = nn.Linear(32, embedding_dim)
-        self.cde_func = CDEFunc(33, 32)
-        self.initial  = nn.Linear(33, 32)
         
         self.reset_parameters()
         
@@ -177,23 +267,16 @@ class NISER_ODE(nn.Module):
         for i, layer in enumerate(self.layers):
             out = layer(mg, out)
             
-        feat_ode = self.reduce(self.feat_drop(self.embedding(embeds_ids)))
+        feat_ode = self.feat_drop(self.embedding(embeds_ids))
         if self.norm:
             feat_ode = feat_ode.div(th.norm(feat_ode, p=2, dim=-1, keepdim=True) + 1e-12)
             
-        feat_ode = th.cat([times.unsqueeze(-1), feat_ode], dim=-1)
-        X        = torchcde.LinearInterpolation(feat_ode)
-        X0       = X.evaluate(X.interval[0])
-        z0       = self.initial(X0)
         # print(X.interval)
-        z_T = torchcde.cdeint(X=X,
-                              z0=z0,
-                              func=self.cde_func,
-                              t=X.interval)
-        
-        time_embeds = self.recover(z_T[:, 1])
-        
-       #  out += time_embeds
+        self.ODEFunc.set_graph(mg)
+        self.ODEFunc.set_x(feat_ode)
+        t_end = mg.edata['t'].max()
+        t     = th.tensor([0., t_end], device=mg.device)
+        feat  = odeint_adjoint(self.ODEFunc, feat_ode, t=t)
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
@@ -201,7 +284,7 @@ class NISER_ODE(nn.Module):
         sr_g = self.readout(mg, feat, last_nodes)
         sr_l = feat[last_nodes]
         sr = th.cat([sr_l, sr_g], dim=1)
-        sr = self.fc_sr(sr) + time_embeds
+        sr = self.fc_sr(sr)
         if self.norm:
             sr = sr.div(th.norm(sr, p=2, dim=-1, keepdim=True) + 1e-12)
         target = self.embedding(self.indices)
