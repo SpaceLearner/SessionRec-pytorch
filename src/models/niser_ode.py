@@ -273,7 +273,7 @@ class NISER_ODE(nn.Module):
         # print(t)
         feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='euler')[-1]
         
-        print(feat.shape)
+        # print(feat.shape)
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
