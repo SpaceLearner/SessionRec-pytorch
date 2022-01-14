@@ -73,6 +73,7 @@ class GraphGRUODE(nn.Module):
         # graph      = dgl.add_self_loop(graph)
         x = self.x
 
+        print(x.shape)
         if self.gnn != 'Linear':
             # x = self.lin_xx(torch.cat((self.x.to(self.device), h), dim=1), edge_index).to(self.device)
             xr, xz, xh = self.lin_xr(graph, x), self.lin_xz(graph, x), self.lin_xh(graph, x)
@@ -258,20 +259,16 @@ class NISER_ODE(nn.Module):
         feat = self.feat_drop(self.embedding(iid))
         if self.norm:
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True) + 1e-12)
-        out = feat
-        for i, layer in enumerate(self.layers):
-            out = layer(mg, out)
-            
-        feat_ode = self.feat_drop(self.embedding(embeds_ids))
-        if self.norm:
-            feat_ode = feat_ode.div(th.norm(feat_ode, p=2, dim=-1, keepdim=True) + 1e-12)
+        # out = feat
+        # for i, layer in enumerate(self.layers):
+        #     out = layer(mg, out)
             
         # print(X.interval)
         self.ODEFunc.set_graph(mg)
-        self.ODEFunc.set_x(feat_ode)
+        self.ODEFunc.set_x(feat)
         t_end = mg.edata['t'].max()
         t     = th.tensor([0., t_end], device=mg.device)
-        feat  = odeint_adjoint(self.ODEFunc, feat_ode, t=t)
+        feat  = odeint_adjoint(self.ODEFunc, feat, t=t)
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
