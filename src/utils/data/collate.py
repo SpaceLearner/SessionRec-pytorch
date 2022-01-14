@@ -107,9 +107,11 @@ def seq_to_temporal_session_graph(seq, times):
     g.edata['w'] = weight
     # print(len(times), g.number_of_nodes())
     g.ndata['t'] = th.tensor(times)[indices]
-    print(g.ndata['t'])
-    print(times, g.number_of_nodes(), g.number_of_edges())
-    g.edata['t'] = th.tensor(times)[1:]
+    
+    if g.number_of_edges() == 1:
+        g.edata['t'] = th.tensor(times)
+    else:
+        g.edata['t'] = th.tensor(times)[1:] 
     
     print(g.edata)
     
