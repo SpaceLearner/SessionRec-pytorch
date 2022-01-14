@@ -73,13 +73,13 @@ class GraphGRUODE(nn.Module):
         # graph      = dgl.add_self_loop(graph)
         x = self.x
 
-        print(x.device, graph.device, self.device)
+
         if self.gnn != 'Linear':
             # x = self.lin_xx(torch.cat((self.x.to(self.device), h), dim=1), edge_index).to(self.device)
             xr, xz, xh = self.lin_xr(graph, x), self.lin_xz(graph, x), self.lin_xh(graph, x)
-            r = th.sigmoid(xr + self.lin_hr(h, edge_index))
-            z = th.sigmoid(xz + self.lin_hz(h, edge_index))
-            u = th.tanh(xh + self.lin_hh(r * h, edge_index))
+            r = th.sigmoid(xr + self.lin_hr(graph, h))
+            z = th.sigmoid(xz + self.lin_hz(graph, h))
+            u = th.tanh(xh + self.lin_hh(graph, r * h))
         else:
             # print(h.shape)
             h = self.lin_hx(h)+self.lin_xx(x)
