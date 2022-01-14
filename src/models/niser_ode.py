@@ -261,17 +261,18 @@ class NISER_ODE(nn.Module):
         feat = self.feat_drop(self.embedding(iid))
         if self.norm:
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True) + 1e-12)
-        # out = feat
-        # for i, layer in enumerate(self.layers):
-        #     out = layer(mg, out)
+        out = feat
+        for i, layer in enumerate(self.layers):
+            out = layer(mg, out)
+        feat = out
             
         # print(X.interval)
-        self.ODEFunc.set_graph(mg)
-        self.ODEFunc.set_x(feat)
-        t_end = mg.edata['t'].max()
-        t     = th.tensor([0., t_end / 10], device=mg.device)
-        # print(t)
-        feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='euler')[-1] + feat
+        # self.ODEFunc.set_graph(mg)
+        # self.ODEFunc.set_x(feat)
+        # t_end = mg.edata['t'].max()
+        # t     = th.tensor([0., t_end / 10], device=mg.device)
+        # # print(t)
+        # feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='euler')[-1] + feat
         
         # print(feat.shape)
             
