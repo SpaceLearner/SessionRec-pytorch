@@ -109,7 +109,7 @@ def seq_to_temporal_session_graph(seq, times):
     g.ndata['t'] = th.tensor(times)[indices]
     
     if g.number_of_edges() == 1:
-        g.edata['t'] = th.tensor(times)[0]
+        g.edata['t'] = th.tensor(times)[-1]
     else:
         g.edata['t'] = th.tensor(times)[1:] 
     
