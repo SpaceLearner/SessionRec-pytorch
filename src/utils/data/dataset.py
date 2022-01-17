@@ -2,6 +2,7 @@ import itertools
 from os import read
 import numpy as np
 import pandas as pd
+import pickle as pkl
 
 
 def create_index(sessions):
@@ -25,13 +26,24 @@ def read_timestamps(filepath):
     return sessions
 
 def read_dataset(dataset_dir):
-    train_sessions  = read_sessions(dataset_dir   / 'train.txt')
-    test_sessions   = read_sessions(dataset_dir   / 'test.txt')
-    train_timestamp = read_timestamps(dataset_dir / 'train_timestamp.txt')
-    test_timestamp  = read_timestamps(dataset_dir / 'test_timestamp.txt') 
+    dataset = dataset_dir.strip().split('/')[-1]
+    if dataset in ["gowalla"]:
+        train_sessions  = read_sessions(dataset_dir   / 'train.txt')
+        test_sessions   = read_sessions(dataset_dir   / 'test.txt')
+        train_timestamp = read_timestamps(dataset_dir / 'train_timestamp.txt')
+        test_timestamp  = read_timestamps(dataset_dir / 'test_timestamp.txt') 
+    elif dataset in ["tmall", "nowplaying"]:
+        train_dict      = pkl.load(open(dataset_dir + "train.txt", "rb"))
+        test_dict       = pkl.load(open(dataset_dir + "test.txt", "rb"))
+        train_sessions  = train_dict[0]
+        test_sessions   = test_dict[0]
+        train_timestamp = train_dict[1]
+        test_timestamp  = test_dict[1]
+    
     with open(dataset_dir / 'num_items.txt', 'r') as f:
-        num_items = int(f.readline())
+            num_items = int(f.readline())
     return train_sessions, test_sessions, train_timestamp, test_timestamp, num_items
+        
 
 class AugmentedDataset:
     def __init__(self, sessions, timestamps, sort_by_length=False):
@@ -53,7 +65,11 @@ class AugmentedDataset:
         label     = self.sessions[sid][lidx]
         times     = self.timestamps[sid][:lidx]#  - self.sessions[sid][0]
         temp      = times[0]
+        print(times)
+        # times     = [(t - temp) / 100000 for t in times]
         times     = [(t - temp) / 1000000 for t in times]
+        
+        # print(times)
         
         return seq, times, label #,seq
 

@@ -10,7 +10,9 @@ import dgl.function as fn
 
 from dgl.nn.pytorch import GraphConv
 
-from torchdiffeq import odeint_adjoint
+from torchdiffeq import odeint_adjoint, odeint
+
+from torch.autograd import Variable
 
 class GraphGRUODE(nn.Module):
     
@@ -23,6 +25,7 @@ class GraphGRUODE(nn.Module):
         self.device = device
         self.gnn = gnn
         self.bias = bias
+        self.dropout = nn.Dropout(0.1)
 
         if self.gnn == 'GCNConv':
             # self.lin_xx = GCNConv(self.in_dim+self.hid_dim, self.hid_dim, bias=self.bias)
@@ -68,10 +71,15 @@ class GraphGRUODE(nn.Module):
         # edge_index = self.edge_index_batchs[0]
         
         edge_idx   = self.graph.filter_edges(lambda edges: edges.data['t'] <= t)
+        # print(sum(edge_idx.long()))
         edge_index = self.graph.edges()
         graph      = dgl.graph((edge_index[0][edge_idx], edge_index[1][edge_idx]), num_nodes=self.graph.number_of_nodes(), device=self.device)
+        graph      = dgl.remove_self_loop(graph)
+        graph      = dgl.add_reverse_edges(graph)
         # graph      = dgl.add_self_loop(graph)
         # graph = self.graph
+        # x = self.dropout(self.x)
+        # h = self.dropout(h)
         x = self.x
 
 
@@ -243,6 +251,9 @@ class NISER_ODE(nn.Module):
         )
         
         self.ODEFunc = GraphGRUODE(self.embedding_dim, self.embedding_dim, device=th.device('cuda:0'))
+        
+        # self.initial = GraphConv(self.embedding_dim, 2*self.embedding_dim, allow_zero_in_degree=True)
+        self.initial = nn.Linear(self.embedding_dim, self.embedding_dim)
 
         self.feat_drop = nn.Dropout(feat_drop)
         self.fc_sr = nn.Linear(input_dim + embedding_dim, embedding_dim, bias=False)
@@ -253,6 +264,11 @@ class NISER_ODE(nn.Module):
         stdv = 1.0 / math.sqrt(self.embedding_dim)
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
+            
+    def _reparameterized_sample(self, mean, std):
+        eps1 = th.FloatTensor(std.size()).normal_()
+        eps1 = Variable(eps1).to(mean.device)
+        return eps1.mul(std).add_(mean)
         
     def forward(self, mg, embeds_ids, times, num_nodes):
         
@@ -261,19 +277,21 @@ class NISER_ODE(nn.Module):
         feat = self.feat_drop(self.embedding(iid))
         if self.norm:
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True) + 1e-12)
-        out = feat
-        for i, layer in enumerate(self.layers):
-            out = layer(mg, out)
+        # out = feat
+        # for i, layer in enumerate(self.layers):
+        #     out = layer(mg, out)
         # feat = out
-            
+        # mgs        = dgl.add_reverse_edges(mg)
+        # feat0      = feat
+        # feat0_mean = nn.functional.tanh(feat0[:, :self.embedding_dim])
+        # feat0_var  = nn.functional.softplus(feat0[:, self.embedding_dim:])
+        # feat0      = self._reparameterized_sample(feat0_mean, feat0_var)
+        
         self.ODEFunc.set_graph(mg)
         self.ODEFunc.set_x(feat)
         t_end = mg.edata['t'].max()
-        t     = th.tensor([0., t_end / 10], device=mg.device)
-        # print(t)
-        feat  = odeint_adjoint(self.ODEFunc, feat, t=t, method='rk4')[-1] + out
-        
-        # print(feat.shape)
+        t     = th.tensor([0., t_end], device=mg.device)
+        feat  = odeint(self.ODEFunc, feat, t=t, method='rk4')[-1] # + feat
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
