@@ -8,7 +8,7 @@ import dgl
 import dgl.ops as F
 import dgl.function as fn
 
-from dgl.nn.pytorch import GraphConv
+from dgl.nn.pytorch import GraphConv, GATConv
 
 from torchdiffeq import odeint_adjoint, odeint
 
@@ -30,14 +30,21 @@ class GraphGRUODE(nn.Module):
         if self.gnn == 'GCNConv':
             # self.lin_xx = GCNConv(self.in_dim+self.hid_dim, self.hid_dim, bias=self.bias)
             # self.lin_hx = nn.Linear(self.hid_dim, self.in_dim, bias=self.bias)
-            self.lin_xz = GraphConv(self.in_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
-            self.lin_xr = GraphConv(self.in_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
-            self.lin_xh = GraphConv(self.in_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_xz = GraphConv(self.in_dim,  self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_xr = GraphConv(self.in_dim,  self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+            self.lin_xh = GraphConv(self.in_dim,  self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
             self.lin_hz = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
             self.lin_hr = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
             self.lin_hh = GraphConv(self.hid_dim, self.hid_dim, bias=self.bias, allow_zero_in_degree=True)
+        elif self.gnn == 'GATConv':
+            self.lin_xz = GATConv(self.in_dim,  self.hid_dim, bias=self.bias, num_heads=8, allow_zero_in_degree=True)
+            self.lin_xr = GATConv(self.in_dim,  self.hid_dim, bias=self.bias, num_heads=8, allow_zero_in_degree=True)
+            self.lin_xh = GATConv(self.in_dim,  self.hid_dim, bias=self.bias, num_heads=8, allow_zero_in_degree=True)
+            self.lin_hz = GATConv(self.hid_dim, self.hid_dim, bias=self.bias, num_heads=8, allow_zero_in_degree=True)
+            self.lin_hr = GATConv(self.hid_dim, self.hid_dim, bias=self.bias, num_heads=8, allow_zero_in_degree=True)
+            self.lin_hh = GATConv(self.hid_dim, self.hid_dim, bias=self.bias, num_heads=8, allow_zero_in_degree=True)
         elif self.gnn == 'Linear':
-            self.lin_xx = nn.Linear(self.in_dim, self.hid_dim, bias=self.bias)
+            self.lin_xx = nn.Linear(self.in_dim,  self.hid_dim, bias=self.bias)
             self.lin_hx = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
             self.lin_xz = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
             self.lin_xr = nn.Linear(self.hid_dim, self.hid_dim, bias=self.bias)
@@ -83,8 +90,13 @@ class GraphGRUODE(nn.Module):
         x = self.x
 
 
-        if self.gnn != 'Linear':
+        if self.gnn == 'GATConv':
             # x = self.lin_xx(torch.cat((self.x.to(self.device), h), dim=1), edge_index).to(self.device)
+            xr, xz, xh = self.lin_xr(graph, x).max(1)[0], self.lin_xz(graph, x).max(1)[0], self.lin_xh(graph, x).max(1)[0]
+            r = th.sigmoid(xr + self.lin_hr(graph, h).max(1)[0])
+            z = th.sigmoid(xz + self.lin_hz(graph, h).max(1)[0])
+            u = th.tanh(xh + self.lin_hh(graph, r * h).max(1)[0])
+        elif self.gnn == 'GCNConv':
             xr, xz, xh = self.lin_xr(graph, x), self.lin_xz(graph, x), self.lin_xh(graph, x)
             r = th.sigmoid(xr + self.lin_hr(graph, h))
             z = th.sigmoid(xz + self.lin_hz(graph, h))
@@ -100,6 +112,8 @@ class GraphGRUODE(nn.Module):
 
 
         dh = (1 - z) * (u - h)
+        
+        dh = nn.functional.normalize(dh)
         # self.x = self.hx(dh, edge_index)
         return dh
 
@@ -141,11 +155,11 @@ class CDEFunc(nn.Module):
         z = z.view(z.size(0), self.hidden_channels, self.input_channels)
         return z
 
-class SRGNNLayer(nn.Module):
-    def __init__(self, input_dim, output_dim, batch_norm=False, feat_drop=0.0, activation=None):
+class GGNNLayer(nn.Module):
+    def __init__(self, input_dim, output_dim, feat_drop=0.0, activation=None):
         super().__init__()
         self.dropout    = nn.Dropout(feat_drop)
-        self.gru        = nn.GRUCell(2 * input_dim, output_dim)
+        self.gru        = nn.GRUCell(2 * output_dim, input_dim)
         self.W1         = nn.Linear(input_dim, output_dim, bias=False)
         self.W2         = nn.Linear(input_dim, output_dim, bias=False)
         self.activation = activation
@@ -180,6 +194,35 @@ class SRGNNLayer(nn.Module):
         if self.activation is not None:
             rst = self.activation(rst)
         return rst
+    
+class GGATLayer(nn.Module):
+    
+    def __init__(self, input_dim, output_dim, feat_drop=0.0, activation=None):
+        super().__init__()
+        self.dropout    = nn.Dropout(feat_drop)
+        self.gru        = nn.GRUCell(2 * input_dim, output_dim)
+        self.W1         = GATConv(input_dim, output_dim, 8, feat_drop=feat_drop, attn_drop=feat_drop, residual=False, negative_slope=0.1, allow_zero_in_degree=True)
+        self.W2         = GATConv(input_dim, output_dim, 8, feat_drop=feat_drop, attn_drop=feat_drop, residual=False, negative_slope=0.1, allow_zero_in_degree=True)
+        self.activation = activation 
+        
+    def forward(self, mg, feat):
+        with mg.local_scope():
+            mg = dgl.remove_self_loop(mg)
+            # mg = dgl.add_self_loop(mg)
+            if mg.number_of_nodes() > 0:
+                neigh1 = self.W1(mg, feat).max(1)[0]
+                mg1 = mg.reverse(copy_edata=True)
+                neigh2 = self.W2(mg1, feat).max(1)[0]
+                hn = th.cat((neigh1, neigh2), dim=1)
+                rst = self.gru(hn, feat) 
+            else:
+                rst = feat
+                
+        if self.activation is not None:
+            rst = self.activation(rst)
+        
+        return rst
+            
     
 class AttnReadout(nn.Module):
     def __init__(
@@ -225,6 +268,7 @@ class NISER_ODE(nn.Module):
     
     def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, norm=True, scale=12):
         super().__init__()
+        self.num_items = num_items
         self.embedding = nn.Embedding(num_items, embedding_dim)
         self.register_buffer('indices', th.arange(num_items, dtype=th.long))
         self.embedding_dim = embedding_dim
@@ -234,10 +278,9 @@ class NISER_ODE(nn.Module):
         self.scale = scale
         input_dim = embedding_dim
         for i in range(num_layers):
-            layer = SRGNNLayer(
+            layer = GGNNLayer(
                 input_dim,
-                embedding_dim,
-                batch_norm=None,
+                embedding_dim * 2,
                 feat_drop=feat_drop
             )
             self.layers.append(layer)
@@ -253,7 +296,11 @@ class NISER_ODE(nn.Module):
         self.ODEFunc = GraphGRUODE(self.embedding_dim, self.embedding_dim, device=th.device('cuda:0'))
         
         # self.initial = GraphConv(self.embedding_dim, 2*self.embedding_dim, allow_zero_in_degree=True)
-        self.initial = nn.Linear(self.embedding_dim, self.embedding_dim)
+        # self.initial = nn.Linear(self.embedding_dim, self.embedding_dim)
+        # self.enc_mean  = nn.Sequential(nn.Linear(self.embedding_dim, self.embedding_dim), nn.ReLU(), nn.Linear(self.embedding_dim, self.embedding_dim, bias=False))
+        # self.enc_var   = nn.Sequential(nn.Linear(self.embedding_dim, self.embedding_dim, bias=False), nn.ReLU())
+        self.enc_mean = GGNNLayer(input_dim, embedding_dim, feat_drop=feat_drop)
+        self.enc_var  = GGNNLayer(input_dim, embedding_dim, feat_drop=feat_drop)
 
         self.feat_drop = nn.Dropout(feat_drop)
         self.fc_sr = nn.Linear(input_dim + embedding_dim, embedding_dim, bias=False)
@@ -266,31 +313,50 @@ class NISER_ODE(nn.Module):
             weight.data.uniform_(-stdv, stdv)
             
     def _reparameterized_sample(self, mean, std):
-        eps1 = th.FloatTensor(std.size()).normal_()
-        eps1 = Variable(eps1).to(mean.device)
-        return eps1.mul(std).add_(mean)
+        eps1 = th.FloatTensor(std.size()).normal_().to(mean.device)
+        # eps1 = Variable(eps1).to(mean.device)
+        # return eps1.mul(std).add_(mean)
+        return mean + eps1 * std
         
     def forward(self, mg, embeds_ids, times, num_nodes):
         
         iid = mg.ndata['iid']
         
+        # print(iid.max(), self.num_items)
         feat = self.feat_drop(self.embedding(iid))
         if self.norm:
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True) + 1e-12)
-        # out = feat
+        
+        # feat0 = feat
+        # out   = feat
         # for i, layer in enumerate(self.layers):
         #     out = layer(mg, out)
-        # feat = out
-        # mgs        = dgl.add_reverse_edges(mg)
-        # feat0      = feat
+        feat_mean = self.enc_mean(mg, feat)
+        feat_var  = nn.functional.relu(self.enc_var(mg, feat))
+        feat      = self._reparameterized_sample(feat_mean, feat_var)
+        # # mgs        = dgl.add_reverse_edges(mg)
+        # # feat0      = feat
         # feat0_mean = nn.functional.tanh(feat0[:, :self.embedding_dim])
         # feat0_var  = nn.functional.softplus(feat0[:, self.embedding_dim:])
         # feat0      = self._reparameterized_sample(feat0_mean, feat0_var)
         
+        # feat_mean = self.enc_mean(feat)
+        # feat_var  = self.enc_var(feat)
+        # feat      = self._reparameterized_sample(feat_mean, feat_var)
+        
+        # feat = self.enc_mean(feat)
+        
+        # if self.norm:
+        #     # feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True))
+        #     feat = nn.functional.normalize(feat)
+        
         self.ODEFunc.set_graph(mg)
         self.ODEFunc.set_x(feat)
+        # print(mg.edata)
         t_end = mg.edata['t'].max()
+        
         t     = th.tensor([0., t_end], device=mg.device)
+        # print(t)
         feat  = odeint(self.ODEFunc, feat, t=t, method='rk4')[-1] # + feat
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)

@@ -279,6 +279,7 @@ def collate_fn_factory_temporal(*seq_to_graph_fns):
             bg = dgl.batch(graphs)
             inputs.append(bg)
         labels = th.LongTensor(labels)
+        # print(inputs[0].edata)
         return inputs, labels, embeds_id, times, num_nodes
 
     return collate_fn

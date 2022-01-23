@@ -66,6 +66,7 @@ from src.utils.train import TrainRunner
 from src.models import NISER_ODE
 
 dataset_dir = Path(args.dataset_dir)
+
 print('reading dataset')
 train_sessions, test_sessions, train_timestamps, test_timestamps, num_items = read_dataset(dataset_dir)
 
@@ -76,8 +77,10 @@ if args.valid_split is not None:
     test_timestamps  = train_timestamps[-num_valid:]
     train_timestamps = train_timestamps[:-num_valid]
 
-train_set = AugmentedDataset(train_sessions, train_timestamps)
-test_set  = AugmentedDataset(test_sessions,  test_timestamps)
+dataset = args.dataset_dir.strip().split("/")[-1]
+
+train_set = AugmentedDataset(dataset, train_sessions, train_timestamps)
+test_set  = AugmentedDataset(dataset, test_sessions,  test_timestamps)
 
 collate_fn = collate_fn_factory_temporal(seq_to_temporal_session_graph)
 
@@ -101,7 +104,7 @@ test_loader = DataLoader(
 )
 
 model = NISER_ODE(num_items, args.embedding_dim, args.num_layers, feat_drop=args.feat_drop)
-device = th.device('cuda' if th.cuda.is_available() else 'cpu')
+device = th.device('cuda:0' if th.cuda.is_available() else 'cpu')
 model = model.to(device)
 print(model)
 
@@ -117,6 +120,6 @@ runner = TrainRunner(
 )
 
 print('start training')
-mrr, hit = runner.train(args.epochs, args.log_interval)
+mrr10, mrr20, hit10, hit20 = runner.train(args.epochs, args.log_interval)
 print('MRR@20\tHR@20')
-print(f'{mrr * 100:.3f}%\t{hit * 100:.3f}%')
+print(f'{mrr10 * 100:.3f}%\t{mrr20 * 100:.3f}%\t{hit10 * 100:.3f}%\t{hit20 * 100:.3f}%')

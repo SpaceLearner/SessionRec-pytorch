@@ -26,15 +26,15 @@ def read_timestamps(filepath):
     return sessions
 
 def read_dataset(dataset_dir):
-    dataset = dataset_dir.strip().split('/')[-1]
+    dataset = dataset_dir.name.strip().split('/')[-1]
     if dataset in ["gowalla"]:
         train_sessions  = read_sessions(dataset_dir   / 'train.txt')
         test_sessions   = read_sessions(dataset_dir   / 'test.txt')
         train_timestamp = read_timestamps(dataset_dir / 'train_timestamp.txt')
         test_timestamp  = read_timestamps(dataset_dir / 'test_timestamp.txt') 
     elif dataset in ["tmall", "nowplaying"]:
-        train_dict      = pkl.load(open(dataset_dir + "train.txt", "rb"))
-        test_dict       = pkl.load(open(dataset_dir + "test.txt", "rb"))
+        train_dict      = pkl.load(open(dataset_dir / "train.txt", "rb"))
+        test_dict       = pkl.load(open(dataset_dir / "test.txt", "rb"))
         train_sessions  = train_dict[0]
         test_sessions   = test_dict[0]
         train_timestamp = train_dict[1]
@@ -46,7 +46,8 @@ def read_dataset(dataset_dir):
         
 
 class AugmentedDataset:
-    def __init__(self, sessions, timestamps, sort_by_length=False):
+    def __init__(self, dataset, sessions, timestamps, sort_by_length=False):
+        self.dataset    = dataset
         self.sessions   = sessions
         self.timestamps = timestamps
         # self.graphs = graphs
@@ -64,10 +65,17 @@ class AugmentedDataset:
         seq       = self.sessions[sid][:lidx]
         label     = self.sessions[sid][lidx]
         times     = self.timestamps[sid][:lidx]#  - self.sessions[sid][0]
-        temp      = times[0]
-        print(times)
-        # times     = [(t - temp) / 100000 for t in times]
-        times     = [(t - temp) / 1000000 for t in times]
+        temp0     = times[0]
+        # temp      = times[-1]
+        
+        if self.dataset in ["tmall"]:
+            scale = 100
+        elif self.dataset in ["nowplaying"]:
+            scale = 100000
+        else:
+            scale = 1000000
+            
+        times     = [(t - temp0) / scale for t in times]
         
         # print(times)
         

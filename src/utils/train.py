@@ -85,8 +85,8 @@ class TrainRunner:
         self.patience     = patience
 
     def train(self, epochs, log_interval=100):
-        max_mrr = 0
-        max_hit = 0
+        max_mrr10 = max_mrr20 = 0
+        max_hit10 = max_hit20 = 0
         bad_counter = 0
         t = time.time()
         mean_loss = 0
@@ -112,19 +112,22 @@ class TrainRunner:
                     
                 self.batch += 1
             self.scheduler.step()
-            mrr, hit = evaluate(self.model, self.test_loader, self.device)
+            mrr10, hit10 = evaluate(self.model, self.test_loader, self.device, cutoff=10)
+            mrr20, hit20 = evaluate(self.model, self.test_loader, self.device)
             
             # wandb.log({"hit": hit, "mrr": mrr})
 
-            print(f'Epoch {self.epoch}: MRR = {mrr * 100:.3f}%, Hit = {hit * 100:.3f}%')
+            print(f'Epoch {self.epoch}: MRR@10 = {mrr10 * 100:.3f}%, Hit@10 = {hit10 * 100:.3f}%, MRR@20 = {mrr20 * 100:.3f}%, Hit@20 = {hit20 * 100:.3f}%')
 
-            if mrr < max_mrr and hit < max_hit:
+            if mrr20 < max_mrr20 and hit20 < max_hit20:
                 bad_counter += 1
                 if bad_counter == self.patience:
                     break
             else:
                 bad_counter = 0
-            max_mrr = max(max_mrr, mrr)
-            max_hit = max(max_hit, hit)
+            max_mrr10 = max(max_mrr10, mrr10)
+            max_hit10 = max(max_hit10, hit10)
+            max_mrr20 = max(max_mrr20, mrr20)
+            max_hit20 = max(max_hit20, hit20)
             self.epoch += 1
-        return max_mrr, max_hit
+        return max_mrr10, max_mrr20, max_hit10, max_hit20
