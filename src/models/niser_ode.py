@@ -328,12 +328,14 @@ class NISER_ODE(nn.Module):
             feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True) + 1e-12)
         
         # feat0 = feat
-        # out   = feat
-        # for i, layer in enumerate(self.layers):
-        #     out = layer(mg, out)
-        feat_mean = self.enc_mean(mg, feat)
-        feat_var  = nn.functional.relu(self.enc_var(mg, feat))
-        feat      = self._reparameterized_sample(feat_mean, feat_var)
+        out   = feat
+        for i, layer in enumerate(self.layers):
+            out = layer(mg, out)
+        
+        feat = out
+        # feat_mean = self.enc_mean(mg, feat)
+        # feat_var  = nn.functional.relu(self.enc_var(mg, feat))
+        # feat      = self._reparameterized_sample(feat_mean, feat_var)
         # # mgs        = dgl.add_reverse_edges(mg)
         # # feat0      = feat
         # feat0_mean = nn.functional.tanh(feat0[:, :self.embedding_dim])
@@ -346,9 +348,9 @@ class NISER_ODE(nn.Module):
         
         # feat = self.enc_mean(feat)
         
-        # if self.norm:
-        #     # feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True))
-        #     feat = nn.functional.normalize(feat)
+        if self.norm:
+            # feat = feat.div(th.norm(feat, p=2, dim=-1, keepdim=True))
+            feat = nn.functional.normalize(feat)
         
         self.ODEFunc.set_graph(mg)
         self.ODEFunc.set_x(feat)

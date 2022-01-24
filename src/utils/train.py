@@ -115,7 +115,7 @@ class TrainRunner:
             mrr10, hit10 = evaluate(self.model, self.test_loader, self.device, cutoff=10)
             mrr20, hit20 = evaluate(self.model, self.test_loader, self.device)
             
-            # wandb.log({"hit": hit, "mrr": mrr})
+            wandb.log({"hit": hit, "mrr": mrr})
 
             print(f'Epoch {self.epoch}: MRR@10 = {mrr10 * 100:.3f}%, Hit@10 = {hit10 * 100:.3f}%, MRR@20 = {mrr20 * 100:.3f}%, Hit@20 = {hit20 * 100:.3f}%')
 

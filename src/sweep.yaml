@@ -1,0 +1,11 @@
+project: gng-ode-hyperparameters
+program: scripts/main_niser_ode.py
+method: grid
+
+parameters:
+  embedding-dim:
+    values: [64, 128, 256, 512]
+  num-layers:
+    values: [1, 2, 3, 4, 5]
+  dataset-dir:
+    values: ["../datasets/gowalla", "../datasets/tmall", "../datasets/nowplaying"]
