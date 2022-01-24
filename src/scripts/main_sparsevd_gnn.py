@@ -36,7 +36,7 @@ parser.add_argument(
 parser.add_argument(
     '--num-workers',
     type=int,
-    default=4,
+    default=8,
     help='the number of processes to load the input graphs',
 )
 parser.add_argument(

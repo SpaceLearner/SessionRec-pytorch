@@ -9,6 +9,7 @@ import dgl.ops as F
 import dgl.function as fn
 
 from .sparsevd import LinearSVDO
+from .gru import GRUCell
 
 class SRGNNLayer(nn.Module):
     def __init__(self, input_dim, output_dim, batch_norm=False, feat_drop=0.0, threshold=3.0, activation=None, name=None):
@@ -16,11 +17,11 @@ class SRGNNLayer(nn.Module):
         self.name       = name
         self.batch_norm = nn.BatchNorm1d(input_dim) if batch_norm else None
         self.dropout    = nn.Dropout(feat_drop)
-        self.gru        = nn.GRUCell(2 * input_dim, output_dim)
+        self.gru        = GRUCell(2 * input_dim, output_dim, threshold=threshold, name=name+"_GRU")
         # self.W1         = nn.Linear(input_dim, output_dim, bias=False)
         # self.W2         = nn.Linear(input_dim, output_dim, bias=False)
-        self.W1         = LinearSVDO(input_dim, output_dim, threshold=threshold, bias=False, name=name+'W1')
-        self.W2         = LinearSVDO(input_dim, output_dim, threshold=threshold, bias=False, name=name+'W2')
+        self.W1         = LinearSVDO(input_dim, output_dim, threshold=threshold, bias=False, name=name+'_W1')
+        self.W2         = LinearSVDO(input_dim, output_dim, threshold=threshold, bias=False, name=name+'_W2')
         self.activation = activation
         
     def messager(self, edges):
@@ -97,7 +98,7 @@ class AttnReadout(nn.Module):
 
 class SRGNN(nn.Module):
     
-    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, threshold=8.0, name="SRGNN"):
+    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, threshold=9.5, name="SRGNN"):
         super().__init__()
         self.name = name
         self.threshold = threshold
@@ -141,7 +142,8 @@ class SRGNN(nn.Module):
         
     def forward(self, mg, sg=None):
         iid = mg.ndata['iid']
-        feat = F1.normalize(self.feat_drop(self.embedding(iid)))
+        feat = self.feat_drop(self.embedding(iid))
+        # feat = F1.normalize(self.feat_drop(self.embedding(iid)))
         
         out = feat
         for i, layer in enumerate(self.layers):
@@ -151,16 +153,16 @@ class SRGNN(nn.Module):
 
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         
-        feat = F1.normalize(feat)        
+        # feat = F1.normalize(feat)        
         sr_g = self.readout(mg, feat, last_nodes)
         sr_l = feat[last_nodes]
         sr = th.cat([sr_l, sr_g], dim=1)
         sr = self.fc_sr(sr)
         target = self.embedding(self.indices)
-        sr = F1.normalize(sr)
-        target = F1.normalize(target)
+        # sr = F1.normalize(sr)
+        # target = F1.normalize(target)
         logits = sr @ target.t()
-        logits = th.log(nn.functional.softmax(logits * 12, dim=-1))
+        logits = th.log(nn.functional.softmax(logits, dim=-1))
         return logits# , 0
         
         
