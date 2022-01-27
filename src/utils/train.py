@@ -115,7 +115,7 @@ class TrainRunner:
             mrr10, hit10 = evaluate(self.model, self.test_loader, self.device, cutoff=10)
             mrr20, hit20 = evaluate(self.model, self.test_loader, self.device)
             
-            
+            wandb.log({"hit@20": hit20, "mrr@20": mrr20})
 
             print(f'Epoch {self.epoch}: MRR@10 = {mrr10 * 100:.3f}%, Hit@10 = {hit10 * 100:.3f}%, MRR@20 = {mrr20 * 100:.3f}%, Hit@20 = {hit20 * 100:.3f}%')
 
@@ -129,6 +129,6 @@ class TrainRunner:
             max_hit10 = max(max_hit10, hit10)
             max_mrr20 = max(max_mrr20, mrr20)
             max_hit20 = max(max_hit20, hit20)
-            wandb.log({"hit@20": max_hit20, "mrr@20": max_mrr20})
+            
             self.epoch += 1
         return max_mrr10, max_mrr20, max_hit10, max_hit20

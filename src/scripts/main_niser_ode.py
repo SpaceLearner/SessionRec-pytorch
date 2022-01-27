@@ -38,6 +38,9 @@ parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFo
 parser.add_argument(
     '--dataset-dir', default='datasets/sample', help='the dataset directory'
 )
+parser.add_argument(
+    '--solver', default='rk4', help='The neural ordinary equation solver.'
+)
 parser.add_argument('--embedding-dim', type=int, default=256, help='the embedding size')
 parser.add_argument('--num-layers', type=int, default=1, help='the number of layers')
 parser.add_argument(
@@ -135,7 +138,7 @@ test_loader = DataLoader(
     collate_fn=collate_fn,
 )
 
-model = NISER_ODE(num_items, args.embedding_dim, args.num_layers, feat_drop=args.feat_drop)
+model = NISER_ODE(num_items, args.embedding_dim, args.num_layers, feat_drop=args.feat_drop, solver=args.solver)
 device = th.device('cuda:0' if th.cuda.is_available() else 'cpu')
 model = model.to(device)
 print(model)

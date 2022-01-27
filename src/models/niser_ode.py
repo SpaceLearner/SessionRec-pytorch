@@ -77,10 +77,10 @@ class GraphGRUODE(nn.Module):
 
         # edge_index = self.edge_index_batchs[0]
         
-        edge_idx   = self.graph.filter_edges(lambda edges: edges.data['t'] <= t)
+        # edge_idx   = self.graph.filter_edges(lambda edges: edges.data['t'] <= t)
         # print(sum(edge_idx.long()))
         edge_index = self.graph.edges()
-        graph      = dgl.graph((edge_index[0][edge_idx], edge_index[1][edge_idx]), num_nodes=self.graph.number_of_nodes(), device=self.device)
+        graph      = dgl.graph((edge_index[0], edge_index[1]), num_nodes=self.graph.number_of_nodes(), device=self.device)
         graph      = dgl.remove_self_loop(graph)
         graph      = dgl.add_reverse_edges(graph)
         # graph      = dgl.add_self_loop(graph)
@@ -266,7 +266,7 @@ class AttnReadout(nn.Module):
 
 class NISER_ODE(nn.Module):
     
-    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, norm=True, scale=12):
+    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, norm=True, scale=12, solver=None):
         super().__init__()
         self.num_items = num_items
         self.embedding = nn.Embedding(num_items, embedding_dim)
@@ -276,6 +276,7 @@ class NISER_ODE(nn.Module):
         self.layers = nn.ModuleList()
         self.norm = norm
         self.scale = scale
+        self.solver = solver
         input_dim = embedding_dim
         for i in range(num_layers):
             layer = GGNNLayer(
@@ -359,7 +360,7 @@ class NISER_ODE(nn.Module):
         
         t     = th.tensor([0., t_end], device=mg.device)
         # print(t)
-        feat  = odeint(self.ODEFunc, feat, t=t, method='rk4')[-1] # + feat
+        feat  = odeint(self.ODEFunc, feat, t=t, method=self.solver)[-1] # + feat
             
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         if self.norm:
