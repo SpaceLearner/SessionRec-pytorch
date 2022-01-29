@@ -98,7 +98,7 @@ class AttnReadout(nn.Module):
 
 class SRGNN(nn.Module):
     
-    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, threshold=9.5, name="SRGNN"):
+    def __init__(self, num_items, embedding_dim, num_layers, feat_drop=0.0, threshold=8, name="SRGNN"):
         super().__init__()
         self.name = name
         self.threshold = threshold
@@ -153,7 +153,7 @@ class SRGNN(nn.Module):
 
         last_nodes = mg.filter_nodes(lambda nodes: nodes.data['last'] == 1)
         
-        # feat = F1.normalize(feat)        
+       #  feat = F1.normalize(feat)        
         sr_g = self.readout(mg, feat, last_nodes)
         sr_l = feat[last_nodes]
         sr = th.cat([sr_l, sr_g], dim=1)
