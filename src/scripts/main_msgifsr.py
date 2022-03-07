@@ -148,12 +148,12 @@ collate_fn = collate_fn_factory_ccs((seq_to_ccs_graph,), order=args.order)
 train_loader = DataLoader(
     train_set,
     batch_size=args.batch_size,
-    shuffle=True,
+    # shuffle=True,
     # drop_last=True,
     num_workers=args.num_workers,
     collate_fn=collate_fn,
     pin_memory=True,
-    # sampler=SequentialSampler(train_set)
+    sampler=SequentialSampler(train_set)
 )
 
 test_loader = DataLoader(
