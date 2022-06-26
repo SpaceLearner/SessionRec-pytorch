@@ -24,7 +24,7 @@ Then run the code in src/utils/data/preprocess to process them.
 first create the enveriment.
 
 ```
-conda env create -f environment.yml
+conda env create -f environment.yaml
 ```
 
 then 
