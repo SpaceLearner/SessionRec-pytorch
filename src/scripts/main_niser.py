@@ -8,14 +8,14 @@ parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFo
 parser.add_argument(
     '--dataset-dir', default='datasets/sample', help='the dataset directory'
 )
-parser.add_argument('--embedding-dim', type=int, default=256, help='the embedding size')
-parser.add_argument('--num-layers', type=int, default=1, help='the number of layers')
+parser.add_argument('--embedding-dim', type=int, default=64, help='the embedding size')
+parser.add_argument('--num-layers', type=int, default=2, help='the number of layers')
 parser.add_argument(
-    '--feat-drop', type=float, default=0.1, help='the dropout ratio for features'
+    '--feat-drop', type=float, default=0.5, help='the dropout ratio for features'
 )
 parser.add_argument('--lr', type=float, default=1e-3, help='the learning rate')
 parser.add_argument(
-    '--batch-size', type=int, default=512, help='the batch size for training'
+    '--batch-size', type=int, default=128, help='the batch size for training'
 )
 parser.add_argument(
     '--epochs', type=int, default=30, help='the number of training epochs'
