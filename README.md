@@ -17,7 +17,7 @@ Download and extract the following datasets and put the files in the dataset fol
 * [LastFM](http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html)
 * [Yoochoose](https://www.kaggle.com/chadgostopp/recsys-challenge-2015)
 
-Then run the code in src/utils/data/preprocess to process them.
+Then run the code in src/utils/data/preprocess to process them. When processing yoochoose, please run preprocess_yoochoose.py in datasets first and then run the code in src/utils/data/preprocess.
 
 ## Run
 
