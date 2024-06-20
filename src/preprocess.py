@@ -1,5 +1,6 @@
 from pathlib import Path
 import argparse
+import os
 
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -9,7 +10,7 @@ required = parser.add_argument_group('required arguments')
 required.add_argument(
     '-d',
     '--dataset',
-    choices=['diginetica', 'gowalla', 'lastfm'],
+    choices=['diginetica', 'gowalla', 'lastfm', "yoochoose"],
     required=True,
     help='the dataset name',
 )
@@ -36,6 +37,11 @@ if args.dataset == 'diginetica':
     from utils.data.preprocess import preprocess_diginetica
 
     preprocess_diginetica(dataset_dir, args.filepath)
+
+elif "yoochoose" in args.dataset:
+    from utils.data.preprocess import preprocess_yoochoose
+    # interval = 600
+    preprocess_yoochoose(dataset_dir)    
 else:
     from pandas import Timedelta
     from utils.data.preprocess import preprocess_gowalla_lastfm

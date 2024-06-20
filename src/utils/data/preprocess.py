@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 
 
 def get_session_id(df, interval):
@@ -129,8 +130,27 @@ def save_dataset(dataset_dir, df_train, df_test):
     num_items = len(uniques)
     with open(dataset_dir / 'num_items.txt', 'w') as f:
         f.write(str(num_items))
-
-
+        
+def preprocess_yoochoose(dataset_dir):
+    import pickle
+    print(f'reading {dataset_dir}...')
+    train_sessions = pickle.load(open(os.path.join(dataset_dir, "train_pre.txt"), 'rb'))[0]
+    test_sessions  = pickle.load(open(os.path.join(dataset_dir, "test_pre.txt"),  'rb'))[0]
+    num_items = 0
+    with open(os.path.join(dataset_dir, "train.txt"), "w") as f:
+        for session in train_sessions:
+            num_items = max([num_items] + session)
+            print(session)
+            f.write(",".join(list(map(str, session))) + "\n")
+    with open(os.path.join(dataset_dir, "test.txt"), "w") as f:
+        for session in test_sessions:
+            num_items = max([num_items] + session)
+            f.write(",".join(list(map(str, session))) + "\n")
+    with open(dataset_dir / 'num_items.txt', 'w') as f:
+        f.write(str(num_items))
+    os.remove(os.path.join(dataset_dir, "train_pre.txt"))
+    os.remove(os.path.join(dataset_dir, "test_pre.txt"))
+    
 def preprocess_diginetica(dataset_dir, csv_file):
     print(f'reading {csv_file}...')
     df = pd.read_csv(
